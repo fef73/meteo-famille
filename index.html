@@ -82,6 +82,7 @@
   .meta button:hover{border-color:var(--azure);}
   .meta button:active{transform:scale(.97);}
   .meta button:focus-visible{outline:2px solid var(--live); outline-offset:2px;}
+  .meta-buttons{display:flex; gap:8px; margin-top:6px; justify-content:flex-end;}
 
   .panel{
     background:var(--bg-panel); border:1px solid var(--hairline); border-radius:16px;
@@ -171,7 +172,10 @@
     </div>
     <div class="meta">
       <div id="updated-at">chargement…</div>
-      <button id="refresh-btn">↻ Actualiser</button>
+      <div class="meta-buttons">
+        <button id="share-btn" onclick="shareSite()">📤 Partager</button>
+        <button id="refresh-btn">↻ Actualiser</button>
+      </div>
     </div>
   </header>
 
@@ -470,7 +474,53 @@ async function loadAndRender(){
   }
 }
 
+function shareSite(){
+  const link = window.location.href;
+  const btn = document.getElementById("share-btn");
+  const original = btn.textContent;
+
+  const showCopied = () => {
+    btn.textContent = "✓ Lien copié";
+    setTimeout(() => { btn.textContent = original; }, 1800);
+  };
+
+  const fallbackCopy = () => {
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(link).then(showCopied).catch(() => window.prompt("Copie ce lien :", link));
+      return;
+    }
+    try{
+      const textarea = document.createElement("textarea");
+      textarea.value = link;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(textarea);
+      if(ok) showCopied();
+      else window.prompt("Copie ce lien :", link);
+    }catch(e){
+      window.prompt("Copie ce lien :", link);
+    }
+  };
+
+  if(navigator.share){
+    navigator.share({
+      title: "Qui a le plus chaud ?",
+      text: "Regarde les températures là où vivent Audrey, Marine, Benjamin, Fernand et Valentin :",
+      url: link,
+    }).catch(() => {
+      // partage annulé ou échoué silencieusement — rien à faire
+    });
+  } else {
+    fallbackCopy();
+  }
+}
+
 document.getElementById("refresh-btn").addEventListener("click", loadAndRender);
+document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
   const subtitleEl = document.getElementById("subtitle");
