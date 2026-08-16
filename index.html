@@ -58,7 +58,7 @@
     font-size:clamp(28px,4vw,42px); margin:0; letter-spacing:-.01em;
   }
   .subtitle{color:var(--text-lo); font-size:14px; margin-top:6px; max-width:46ch;}
-  .day-toggle{display:flex; gap:8px; margin-top:14px; flex-wrap:wrap;}
+  .day-toggle{display:flex; gap:8px; margin-top:14px;}
   .day-toggle-btn{
     font-family:'IBM Plex Mono', monospace; font-size:12.5px;
     background:var(--bg-card); color:var(--text-lo); border:1px solid var(--hairline);
@@ -98,18 +98,8 @@
     display:flex; flex-wrap:wrap; gap:18px; padding:16px 4px 4px;
     font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-lo);
   }
-  .legend-item{display:flex; align-items:center; gap:7px; cursor:pointer; user-select:none; transition:opacity .15s ease;}
-  .legend-item:hover{opacity:.75;}
-  .legend-item-off{opacity:.35; text-decoration:line-through;}
+  .legend-item{display:flex; align-items:center; gap:7px;}
   .swatch{width:12px;height:3px;border-radius:2px;}
-  .swatch-dashed{
-    background:repeating-linear-gradient(to right, #ff3b3b 0 4px, transparent 4px 7px);
-    border-radius:0;
-  }
-  .chart-hint{
-    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-lo);
-    text-align:center; padding:10px 4px 0;
-  }
 
   .cards{
     display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
@@ -178,8 +168,6 @@
       <div class="day-toggle" id="day-toggle">
         <button class="day-toggle-btn active" data-day="today">Aujourd'hui</button>
         <button class="day-toggle-btn" data-day="tomorrow">Demain</button>
-        <button class="day-toggle-btn" data-day="afterTomorrow">Après-demain</button>
-        <button class="day-toggle-btn" data-day="threeDays">3 jours</button>
       </div>
     </div>
     <div class="meta">
@@ -197,7 +185,6 @@
       <canvas id="tempChart"></canvas>
     </div>
     <div class="legend-row" id="legend-row"></div>
-    <div class="chart-hint">💡 Clique sur un nom dans la légende ci-dessus pour afficher ou masquer sa courbe.</div>
   </div>
 
   <div class="cards" id="cards"></div>
@@ -234,23 +221,10 @@ function getAvatarImg(key){
   return avatarImgCache[key];
 }
 
-let viewDay = "today"; // "today" | "tomorrow" | "afterTomorrow" | "threeDays"
-const DAY_OFFSETS = { today: 0, tomorrow: 1, afterTomorrow: 2 };
-
-function hourOfISO(iso){
-  // Extract the hour directly from the "YYYY-MM-DDTHH:MM" string to avoid
-  // the browser's local timezone being applied by the Date constructor.
-  return parseInt(iso.split("T")[1].split(":")[0], 10);
-}
-
-function localHourFor(offsetSeconds){
-  if(offsetSeconds == null) return new Date().getHours();
-  const d = new Date(Date.now() + offsetSeconds * 1000);
-  return d.getUTCHours();
-}
+let viewDay = "today"; // "today" | "tomorrow"
 
 async function fetchCity(city, opts = {}){
-  let url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m&forecast_days=3&timezone=auto`;
+  let url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m&forecast_days=2&timezone=auto`;
   if(city.elevation != null && !opts.skipElevation){
     url += `&elevation=${city.elevation}`;
   }
@@ -258,23 +232,18 @@ async function fetchCity(city, opts = {}){
   if(!res.ok) throw new Error("Erreur API pour " + city.name);
   const data = await res.json();
 
-  const isThreeDays = viewDay === "threeDays";
-  const dayIdx = DAY_OFFSETS[viewDay] || 0;
-  const start = isThreeDays ? 0 : dayIdx * 24;
-  const end = isThreeDays ? 72 : start + 24;
+  const start = viewDay === "tomorrow" ? 24 : 0;
+  const end = start + 24;
   const slice = (arr) => (arr || []).slice(start, end);
-  const timestamps = slice(data.hourly.time);
 
   return {
-    hours: timestamps.map(hourOfISO),
-    timestamps: timestamps,
-    dayDate: timestamps[0] ? timestamps[0].slice(0, 10) : null,
+    hours: slice(data.hourly.time).map(t => new Date(t).getHours()),
+    dayDate: slice(data.hourly.time)[0] ? slice(data.hourly.time)[0].slice(0, 10) : null,
     temps: slice(data.hourly.temperature_2m),
     weatherCodes: slice(data.hourly.weather_code),
     humidity: slice(data.hourly.relative_humidity_2m),
     windSpeeds: slice(data.hourly.wind_speed_10m),
     windDirections: slice(data.hourly.wind_direction_10m),
-    utcOffsetSeconds: data.utc_offset_seconds,
     timezone: data.timezone,
   };
 }
@@ -338,30 +307,22 @@ const avatarPlugin = {
 
 function buildLegend(){
   const row = document.getElementById("legend-row");
-  row.innerHTML = CITIES.map((c, i) => `
-    <div class="legend-item" data-dataset-index="${i}" role="button" tabindex="0">
+  const citiesHtml = CITIES.map(c => `
+    <div class="legend-item">
       <span class="swatch" style="background:${c.color}"></span>${c.name}
     </div>
-  `).join("") + `
-    <div class="legend-item" data-dataset-index="${CITIES.length}" role="button" tabindex="0">
-      <span class="swatch swatch-dashed"></span>Seuil canicule (35°C)
+  `).join("");
+  const caniculeHtml = `
+    <div class="legend-item">
+      <span class="swatch" style="background:repeating-linear-gradient(90deg,#e63946,#e63946 6px,transparent 6px,transparent 10px);"></span>Seuil canicule (35°C)
     </div>
   `;
-
-  row.querySelectorAll(".legend-item").forEach(item => {
-    const toggle = () => {
-      if(!chart) return;
-      const index = parseInt(item.dataset.datasetIndex, 10);
-      const meta = chart.getDatasetMeta(index);
-      meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : !meta.hidden;
-      chart.update();
-      item.classList.toggle("legend-item-off", !!meta.hidden);
-    };
-    item.addEventListener("click", toggle);
-    item.addEventListener("keydown", (e) => {
-      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); toggle(); }
-    });
-  });
+  const gelHtml = `
+    <div class="legend-item">
+      <span class="swatch" style="background:repeating-linear-gradient(90deg,#48cae4,#48cae4 6px,transparent 6px,transparent 10px);"></span>Seuil de gel (0°C)
+    </div>
+  `;
+  row.innerHTML = citiesHtml + caniculeHtml + gelHtml;
 }
 
 function buildCards(results){
@@ -369,13 +330,13 @@ function buildCards(results){
   cardsEl.innerHTML = results.map(r => {
     let idx;
     let tempLabel;
-    if(viewDay === "tomorrow" || viewDay === "afterTomorrow"){
+    if(viewDay === "tomorrow"){
       idx = r.hours.findIndex(h => h === 12);
       if(idx < 0) idx = Math.floor(r.temps.length/2);
-      tempLabel = viewDay === "tomorrow" ? "°C demain à midi" : "°C après-demain à midi";
+      tempLabel = "°C demain à midi";
     } else {
-      const hr = localHourFor(r.utcOffsetSeconds);
-      const nowHourIdx = r.hours.findIndex(h => h === hr);
+      const now = new Date();
+      const nowHourIdx = r.hours.findIndex(h => h === now.getHours());
       idx = nowHourIdx >= 0 ? nowHourIdx : Math.floor(r.temps.length/2);
       tempLabel = "°C actuellement";
     }
@@ -426,10 +387,7 @@ async function loadAndRender(){
 
     statusEl.style.display = "none";
 
-    const dayShortLabels = ["Auj.", "Dem.", "Aprèsdem."];
-    const labels = viewDay === "threeDays"
-      ? results[0].hours.map((h, i) => `${dayShortLabels[Math.floor(i / 24)]} ${h}h`)
-      : results[0].hours.map(h => h + "h");
+    const labels = results[0].hours.map(h => h + "h");
 
     const datasets = results.map(r => {
       const maxVal = Math.max(...r.temps);
@@ -449,18 +407,36 @@ async function loadAndRender(){
       return dsBase;
     });
 
+    // ligne de seuil "canicule" — visible en pointillés rouges sur toute la largeur du graphique
+    const CANICULE_SEUIL = 35;
     datasets.push({
-      label: "Seuil canicule (35°C)",
-      data: labels.map(() => 35),
-      borderColor: "#ff3b3b",
-      backgroundColor: "#ff3b3b",
-      borderWidth: 1.5,
-      borderDash: [7, 5],
+      label: "Seuil canicule (" + CANICULE_SEUIL + "°C)",
+      data: labels.map(() => CANICULE_SEUIL),
+      borderColor: "#e63946",
+      backgroundColor: "#e63946",
+      borderWidth: 2,
+      borderDash: [8, 5],
       pointRadius: 0,
       pointHoverRadius: 0,
       tension: 0,
       fill: false,
-      order: -1,
+      isThreshold: true,
+    });
+
+    // ligne de seuil "gel" — visible en pointillés bleus sur toute la largeur du graphique
+    const GEL_SEUIL = 0;
+    datasets.push({
+      label: "Seuil de gel (" + GEL_SEUIL + "°C)",
+      data: labels.map(() => GEL_SEUIL),
+      borderColor: "#48cae4",
+      backgroundColor: "#48cae4",
+      borderWidth: 2,
+      borderDash: [8, 5],
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      tension: 0,
+      fill: false,
+      isThreshold: true,
     });
 
     // add one "ghost" dataset per person purely to anchor avatar drawing at that city's peak
@@ -591,15 +567,9 @@ document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
   const subtitleEl = document.getElementById("subtitle");
-  if(viewDay === "tomorrow"){
-    subtitleEl.textContent = "Prévisions horaires de demain, pour les mêmes lieux.";
-  } else if(viewDay === "afterTomorrow"){
-    subtitleEl.textContent = "Prévisions horaires d'après-demain, pour les mêmes lieux.";
-  } else if(viewDay === "threeDays"){
-    subtitleEl.textContent = "Prévisions horaires sur 3 jours d'affilée, sur un seul graphique.";
-  } else {
-    subtitleEl.textContent = "Températures horaires du jour, relevées là où vivent Audrey, Marine, Benjamin, Fernand et Valentin.";
-  }
+  subtitleEl.textContent = viewDay === "tomorrow"
+    ? "Prévisions horaires de demain, pour les mêmes lieux."
+    : "Températures horaires du jour, relevées là où vivent Audrey, Marine, Benjamin, Fernand et Valentin.";
 }
 
 document.querySelectorAll(".day-toggle-btn").forEach(btn => {
@@ -616,5 +586,7 @@ updateSubtitle();
 loadAndRender();
 setInterval(loadAndRender, 15 * 60 * 1000);
 </script>
+<script data-goatcounter="https://fef73.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>
