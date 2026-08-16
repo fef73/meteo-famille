@@ -168,6 +168,8 @@
       <div class="day-toggle" id="day-toggle">
         <button class="day-toggle-btn active" data-day="today">Aujourd'hui</button>
         <button class="day-toggle-btn" data-day="tomorrow">Demain</button>
+        <button class="day-toggle-btn" data-day="afterTomorrow">Après-demain</button>
+        <button class="day-toggle-btn" data-day="threeDays">3 jours</button>
       </div>
     </div>
     <div class="meta">
@@ -221,10 +223,11 @@ function getAvatarImg(key){
   return avatarImgCache[key];
 }
 
-let viewDay = "today"; // "today" | "tomorrow"
+let viewDay = "today"; // "today" | "tomorrow" | "afterTomorrow" | "threeDays"
+const DAY_OFFSETS = { today: 0, tomorrow: 1, afterTomorrow: 2 };
 
 async function fetchCity(city, opts = {}){
-  let url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m&forecast_days=2&timezone=auto`;
+  let url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m&forecast_days=3&timezone=auto`;
   if(city.elevation != null && !opts.skipElevation){
     url += `&elevation=${city.elevation}`;
   }
@@ -232,8 +235,10 @@ async function fetchCity(city, opts = {}){
   if(!res.ok) throw new Error("Erreur API pour " + city.name);
   const data = await res.json();
 
-  const start = viewDay === "tomorrow" ? 24 : 0;
-  const end = start + 24;
+  const isThreeDays = viewDay === "threeDays";
+  const dayIdx = DAY_OFFSETS[viewDay] || 0;
+  const start = isThreeDays ? 0 : dayIdx * 24;
+  const end = isThreeDays ? 72 : start + 24;
   const slice = (arr) => (arr || []).slice(start, end);
 
   return {
@@ -308,21 +313,48 @@ const avatarPlugin = {
 function buildLegend(){
   const row = document.getElementById("legend-row");
   const citiesHtml = CITIES.map(c => `
-    <div class="legend-item">
+    <div class="legend-item" data-legend-label="${c.name}" style="cursor:pointer;">
       <span class="swatch" style="background:${c.color}"></span>${c.name}
     </div>
   `).join("");
   const caniculeHtml = `
-    <div class="legend-item">
+    <div class="legend-item" data-legend-label="Seuil canicule (35°C)" style="cursor:pointer;">
       <span class="swatch" style="background:repeating-linear-gradient(90deg,#e63946,#e63946 6px,transparent 6px,transparent 10px);"></span>Seuil canicule (35°C)
     </div>
   `;
   const gelHtml = `
-    <div class="legend-item">
+    <div class="legend-item" data-legend-label="Seuil de gel (0°C)" style="cursor:pointer;">
       <span class="swatch" style="background:repeating-linear-gradient(90deg,#48cae4,#48cae4 6px,transparent 6px,transparent 10px);"></span>Seuil de gel (0°C)
     </div>
   `;
   row.innerHTML = citiesHtml + caniculeHtml + gelHtml;
+
+  row.querySelectorAll(".legend-item").forEach(item => {
+    item.addEventListener("click", () => {
+      if(!chart) return;
+      const label = item.dataset.legendLabel;
+      // find the "real" dataset with this label (skip ghost/marker datasets)
+      const idx = chart.data.datasets.findIndex(ds => ds.label === label && !ds.avatarPoint);
+      if(idx < 0) return;
+      const meta = chart.getDatasetMeta(idx);
+      meta.hidden = meta.hidden === null ? !chart.data.datasets[idx].hidden : !meta.hidden;
+
+      // if hiding/showing a city line, also toggle its avatar marker dataset(s)
+      const city = CITIES.find(c => c.name === label);
+      if(city){
+        const peopleNames = city.people.map(p => p.name);
+        chart.data.datasets.forEach((ds, i) => {
+          if(ds.avatarPoint && peopleNames.includes(ds.avatarPoint.label)){
+            chart.getDatasetMeta(i).hidden = meta.hidden;
+          }
+        });
+      }
+
+      chart.update();
+      item.style.opacity = meta.hidden ? 0.4 : 1;
+      item.style.textDecoration = meta.hidden ? "line-through" : "none";
+    });
+  });
 }
 
 function buildCards(results){
@@ -334,6 +366,13 @@ function buildCards(results){
       idx = r.hours.findIndex(h => h === 12);
       if(idx < 0) idx = Math.floor(r.temps.length/2);
       tempLabel = "°C demain à midi";
+    } else if(viewDay === "afterTomorrow"){
+      idx = r.hours.findIndex(h => h === 12);
+      if(idx < 0) idx = Math.floor(r.temps.length/2);
+      tempLabel = "°C après-demain à midi";
+    } else if(viewDay === "threeDays"){
+      idx = Math.floor(r.temps.length/2);
+      tempLabel = "°C actuellement";
     } else {
       const now = new Date();
       const nowHourIdx = r.hours.findIndex(h => h === now.getHours());
@@ -387,7 +426,10 @@ async function loadAndRender(){
 
     statusEl.style.display = "none";
 
-    const labels = results[0].hours.map(h => h + "h");
+    const dayShortLabels = ["Auj.", "Dem.", "Aprèsdem."];
+    const labels = viewDay === "threeDays"
+      ? results[0].hours.map((h, i) => `${dayShortLabels[Math.floor(i / 24)]} ${h}h`)
+      : results[0].hours.map(h => h + "h");
 
     const datasets = results.map(r => {
       const maxVal = Math.max(...r.temps);
@@ -567,9 +609,15 @@ document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
   const subtitleEl = document.getElementById("subtitle");
-  subtitleEl.textContent = viewDay === "tomorrow"
-    ? "Prévisions horaires de demain, pour les mêmes lieux."
-    : "Températures horaires du jour, relevées là où vivent Audrey, Marine, Benjamin, Fernand et Valentin.";
+  if(viewDay === "tomorrow"){
+    subtitleEl.textContent = "Prévisions horaires de demain, pour les mêmes lieux.";
+  } else if(viewDay === "afterTomorrow"){
+    subtitleEl.textContent = "Prévisions horaires d'après-demain, pour les mêmes lieux.";
+  } else if(viewDay === "threeDays"){
+    subtitleEl.textContent = "Prévisions horaires sur 3 jours, pour les mêmes lieux.";
+  } else {
+    subtitleEl.textContent = "Températures horaires du jour, relevées là où vivent Audrey, Marine, Benjamin, Fernand et Valentin.";
+  }
 }
 
 document.querySelectorAll(".day-toggle-btn").forEach(btn => {
