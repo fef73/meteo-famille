@@ -170,6 +170,7 @@
         <button class="day-toggle-btn" data-day="tomorrow">Demain</button>
         <button class="day-toggle-btn" data-day="afterTomorrow">Après-demain</button>
         <button class="day-toggle-btn" data-day="threeDays">3 jours</button>
+        <button class="day-toggle-btn" data-day="sevenDays">7 jours</button>
       </div>
     </div>
     <div class="meta">
@@ -227,7 +228,10 @@ let viewDay = "today"; // "today" | "tomorrow" | "afterTomorrow" | "threeDays"
 const DAY_OFFSETS = { today: 0, tomorrow: 1, afterTomorrow: 2 };
 
 async function fetchCity(city, opts = {}){
-  let url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m&forecast_days=3&timezone=auto`;
+  const isMultiDay = viewDay === "threeDays" || viewDay === "sevenDays";
+  const numDays = viewDay === "sevenDays" ? 7 : viewDay === "threeDays" ? 3 : 1;
+  const forecastDays = Math.max(3, numDays); // au moins 3 pour couvrir l'après-demain
+  let url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&hourly=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,wind_direction_10m&forecast_days=${forecastDays}&timezone=auto`;
   if(city.elevation != null && !opts.skipElevation){
     url += `&elevation=${city.elevation}`;
   }
@@ -235,14 +239,14 @@ async function fetchCity(city, opts = {}){
   if(!res.ok) throw new Error("Erreur API pour " + city.name);
   const data = await res.json();
 
-  const isThreeDays = viewDay === "threeDays";
   const dayIdx = DAY_OFFSETS[viewDay] || 0;
-  const start = isThreeDays ? 0 : dayIdx * 24;
-  const end = isThreeDays ? 72 : start + 24;
+  const start = isMultiDay ? 0 : dayIdx * 24;
+  const end = isMultiDay ? numDays * 24 : start + 24;
   const slice = (arr) => (arr || []).slice(start, end);
 
   return {
     hours: slice(data.hourly.time).map(t => new Date(t).getHours()),
+    timestamps: slice(data.hourly.time),
     dayDate: slice(data.hourly.time)[0] ? slice(data.hourly.time)[0].slice(0, 10) : null,
     temps: slice(data.hourly.temperature_2m),
     weatherCodes: slice(data.hourly.weather_code),
@@ -370,8 +374,10 @@ function buildCards(results){
       idx = r.hours.findIndex(h => h === 12);
       if(idx < 0) idx = Math.floor(r.temps.length/2);
       tempLabel = "°C après-demain à midi";
-    } else if(viewDay === "threeDays"){
-      idx = Math.floor(r.temps.length/2);
+    } else if(viewDay === "threeDays" || viewDay === "sevenDays"){
+      const now = new Date();
+      const nowHourIdx = r.hours.findIndex(h => h === now.getHours());
+      idx = nowHourIdx >= 0 ? nowHourIdx : Math.floor(r.temps.length/2);
       tempLabel = "°C actuellement";
     } else {
       const now = new Date();
@@ -426,8 +432,16 @@ async function loadAndRender(){
 
     statusEl.style.display = "none";
 
+    const WEEKDAYS_SHORT = ["dim","lun","mar","mer","jeu","ven","sam"];
     const dayShortLabels = ["Auj.", "Dem.", "Aprèsdem."];
-    const labels = viewDay === "threeDays"
+    const labels = viewDay === "sevenDays"
+      ? results[0].timestamps.map(t => {
+          const [datePart, timePart] = t.split("T");
+          const [y, m, d] = datePart.split("-").map(Number);
+          const wd = WEEKDAYS_SHORT[new Date(y, m - 1, d).getDay()];
+          return `${wd} ${timePart.split(":")[0]}h`;
+        })
+      : viewDay === "threeDays"
       ? results[0].hours.map((h, i) => `${dayShortLabels[Math.floor(i / 24)]} ${h}h`)
       : results[0].hours.map(h => h + "h");
 
@@ -521,7 +535,7 @@ async function loadAndRender(){
         plugins: {
           legend: { display: false },
           tooltip: {
-            filter: (item) => !item.dataset.avatarPoint,
+            filter: (item) => !item.dataset.avatarPoint && item.dataset.label !== "Seuil canicule (35°C)" && item.dataset.label !== "Seuil de gel (0°C)",
             backgroundColor: "#132539",
             borderColor: "#22384f",
             borderWidth: 1,
@@ -615,6 +629,8 @@ function updateSubtitle(){
     subtitleEl.textContent = "Prévisions horaires d'après-demain, pour les mêmes lieux.";
   } else if(viewDay === "threeDays"){
     subtitleEl.textContent = "Prévisions horaires sur 3 jours, pour les mêmes lieux.";
+  } else if(viewDay === "sevenDays"){
+    subtitleEl.textContent = "Prévisions horaires sur 7 jours, pour les mêmes lieux. Au-delà de 2-3 jours, la précision d'Open-Meteo diminue.";
   } else {
     subtitleEl.textContent = "Températures horaires du jour, relevées là où vivent Audrey, Marine, Benjamin, Fernand et Valentin.";
   }
