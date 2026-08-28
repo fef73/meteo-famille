@@ -257,6 +257,17 @@ async function fetchCity(city, opts = {}){
   };
 }
 
+// Formate un horodatage ISO ("2026-08-28T09:00") en date lisible pour le titre du tooltip,
+// ex : "ven. 28 août · 09:00"
+function formatTooltipDateTime(iso){
+  if(!iso) return "";
+  const [datePart, timePart] = iso.split("T");
+  const [y, m, d] = datePart.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  const dateStr = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+  return `${dateStr} · ${timePart.slice(0, 5)}`;
+}
+
 function weatherEmoji(code){
   if(code == null) return "🌡️";
   if(code === 0) return "☀️";
@@ -542,7 +553,12 @@ async function loadAndRender(){
             titleFont: { family: "IBM Plex Mono" },
             bodyFont: { family: "IBM Plex Mono" },
             callbacks: {
-              label: (item) => ` ${truncateName(item.dataset.label, 10)}: ${item.formattedValue}°C`
+              title: (items) => items.length ? formatTooltipDateTime(results[0].timestamps[items[0].dataIndex]) : "",
+              label: (item) => {
+                const r = results[item.datasetIndex];
+                const code = r && r.weatherCodes ? r.weatherCodes[item.dataIndex] : null;
+                return ` ${weatherEmoji(code)} ${truncateName(item.dataset.label, 10)}: ${item.formattedValue}°C`;
+              }
             }
           },
         },
