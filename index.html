@@ -580,8 +580,9 @@ async function loadAndRender(){
     buildCards(results);
 
     const now = new Date();
+    const dateStr = now.toLocaleDateString("fr-FR", { day:"numeric", month:"long" });
     document.getElementById("updated-at").textContent =
-      "mis à jour à " + now.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
+      "mis à jour le " + dateStr + " à " + now.toLocaleTimeString("fr-FR", {hour:"2-digit", minute:"2-digit"});
 
   } catch(err){
     statusEl.style.display = "flex";
