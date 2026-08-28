@@ -257,6 +257,19 @@ async function fetchCity(city, opts = {}){
   };
 }
 
+const MOON_ICONS = ["🌑","🌒","🌓","🌔","🌕","🌖","🌗","🌘"];
+const MOON_LABELS = ["Nouvelle lune","Premier croissant","Premier quartier","Lune gibbeuse croissante","Pleine lune","Lune gibbeuse décroissante","Dernier quartier","Dernier croissant"];
+function moonPhase(dateStr){
+  const date = new Date(dateStr + "T12:00:00Z"); // midi UTC pour éviter les effets de fuseau horaire
+  const knownNewMoon = Date.UTC(2000, 0, 6, 18, 14, 0); // nouvelle lune de référence
+  const synodicMonth = 29.530588853; // durée moyenne du cycle lunaire en jours
+  const diffDays = (date.getTime() - knownNewMoon) / 86400000;
+  let phase = (diffDays % synodicMonth) / synodicMonth;
+  if(phase < 0) phase += 1;
+  const index = Math.round(phase * 8) % 8;
+  return { emoji: MOON_ICONS[index], label: MOON_LABELS[index] };
+}
+
 // Formate un horodatage ISO ("2026-08-28T09:00") en date lisible pour le titre du tooltip,
 // ex : "ven. 28 août · 09:00"
 function formatTooltipDateTime(iso){
@@ -553,7 +566,17 @@ async function loadAndRender(){
             titleFont: { family: "IBM Plex Mono" },
             bodyFont: { family: "IBM Plex Mono" },
             callbacks: {
-              title: (items) => items.length ? formatTooltipDateTime(results[0].timestamps[items[0].dataIndex]) : "",
+              title: (items) => {
+                if(!items.length) return "";
+                const iso = results[0].timestamps[items[0].dataIndex];
+                if(!iso) return "";
+                return `${moonPhase(iso.slice(0,10)).emoji} ${formatTooltipDateTime(iso)}`;
+              },
+              afterTitle: (items) => {
+                if(!items.length) return "";
+                const iso = results[0].timestamps[items[0].dataIndex];
+                return iso ? moonPhase(iso.slice(0,10)).label : "";
+              },
               label: (item) => {
                 const r = results[item.datasetIndex];
                 const code = r && r.weatherCodes ? r.weatherCodes[item.dataIndex] : null;
