@@ -309,6 +309,7 @@ const avatarPlugin = {
   id: "avatarPlugin",
   afterDatasetsDraw(chartInstance){
     const {ctx} = chartInstance;
+    chartInstance.avatarHitboxes = [];
     chartInstance.data.datasets.forEach((ds, i) => {
       if(!ds.avatarPoint) return;
       const meta = chartInstance.getDatasetMeta(i);
@@ -335,9 +336,61 @@ const avatarPlugin = {
       };
       if(img.complete) drawIt();
       else img.onload = () => chartInstance.draw();
+
+      // hitbox for click detection (avatar + name label area)
+      if(typeof ds.avatarPoint.realDatasetIndex === "number"){
+        chartInstance.avatarHitboxes.push({
+          x0: point.x - size/2 + dx,
+          y0: point.y - size/2 + dy,
+          x1: point.x + size/2 + dx,
+          y1: point.y + dy + size/2 + 16,
+          datasetIndex: ds.avatarPoint.realDatasetIndex,
+          index: idx,
+          pointX: point.x,
+          pointY: point.y,
+        });
+      }
     });
   }
 };
+
+function findAvatarHitbox(chartInstance, xPx, yPx){
+  const boxes = chartInstance.avatarHitboxes;
+  if(!boxes) return null;
+  for(const hb of boxes){
+    if(xPx >= hb.x0 && xPx <= hb.x1 && yPx >= hb.y0 && yPx <= hb.y1) return hb;
+  }
+  return null;
+}
+
+function setupAvatarClickHandler(canvasEl){
+  if(canvasEl._avatarHandlersBound) return;
+  canvasEl._avatarHandlersBound = true;
+
+  canvasEl.addEventListener("click", (evt) => {
+    if(!chart) return;
+    const rect = canvasEl.getBoundingClientRect();
+    const x = evt.clientX - rect.left;
+    const y = evt.clientY - rect.top;
+    const hb = findAvatarHitbox(chart, x, y);
+    if(!hb) return;
+    chart.setActiveElements([{ datasetIndex: hb.datasetIndex, index: hb.index }]);
+    chart.tooltip.setActiveElements(
+      [{ datasetIndex: hb.datasetIndex, index: hb.index }],
+      { x: hb.pointX, y: hb.pointY }
+    );
+    chart.update();
+  });
+
+  canvasEl.addEventListener("mousemove", (evt) => {
+    if(!chart) return;
+    const rect = canvasEl.getBoundingClientRect();
+    const x = evt.clientX - rect.left;
+    const y = evt.clientY - rect.top;
+    const hb = findAvatarHitbox(chart, x, y);
+    canvasEl.style.cursor = hb ? "pointer" : "";
+  });
+}
 
 function buildLegend(){
   const row = document.getElementById("legend-row");
@@ -521,7 +574,7 @@ async function loadAndRender(){
     });
 
     // add one "ghost" dataset per person purely to anchor avatar drawing at that city's peak
-    results.forEach(r => {
+    results.forEach((r, resultIdx) => {
       const maxVal = Math.max(...r.temps);
       const maxIdx = r.temps.indexOf(maxVal);
       r.city.people.forEach((p, i) => {
@@ -541,14 +594,16 @@ async function loadAndRender(){
           fill: false,
           hidden: false,
           showLine: false,
-          avatarPoint: { index: maxIdx, key: p.key, label: p.name, dx, dy },
+          avatarPoint: { index: maxIdx, key: p.key, label: p.name, dx, dy, realDatasetIndex: resultIdx },
           legend: { display:false },
         });
       });
     });
 
     if(chart) chart.destroy();
-    const ctx = document.getElementById("tempChart").getContext("2d");
+    const canvasEl = document.getElementById("tempChart");
+    const ctx = canvasEl.getContext("2d");
+    setupAvatarClickHandler(canvasEl);
     chart = new Chart(ctx, {
       type: "line",
       data: { labels, datasets },
