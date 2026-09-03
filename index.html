@@ -214,6 +214,7 @@ const CITIES = [
 ];
 
 let chart;
+let activeAvatarLabel = null;
 const avatarImgCache = {};
 function getAvatarImg(key){
   if(!avatarImgCache[key]){
@@ -373,7 +374,19 @@ function setupAvatarClickHandler(canvasEl){
     const x = evt.clientX - rect.left;
     const y = evt.clientY - rect.top;
     const hb = findAvatarHitbox(chart, x, y);
-    if(!hb) return;
+
+    if(!hb){
+      // clic ailleurs sur le graphique : on referme le tooltip déclenché par un avatar
+      if(activeAvatarLabel !== null){
+        activeAvatarLabel = null;
+        chart.setActiveElements([]);
+        chart.tooltip.setActiveElements([], {x: 0, y: 0});
+        chart.update();
+      }
+      return;
+    }
+
+    activeAvatarLabel = hb.label;
     chart.setActiveElements([{ datasetIndex: hb.datasetIndex, index: hb.index }]);
     chart.tooltip.setActiveElements(
       [{ datasetIndex: hb.datasetIndex, index: hb.index }],
@@ -389,6 +402,8 @@ function setupAvatarClickHandler(canvasEl){
     const y = evt.clientY - rect.top;
     const hb = findAvatarHitbox(chart, x, y);
     canvasEl.style.cursor = hb ? "pointer" : "";
+    // le survol normal de la courbe (hors avatar) reprend le tooltip standard, sans prénom
+    if(!hb && activeAvatarLabel !== null) activeAvatarLabel = null;
   });
 }
 
@@ -601,6 +616,7 @@ async function loadAndRender(){
     });
 
     if(chart) chart.destroy();
+    activeAvatarLabel = null;
     const canvasEl = document.getElementById("tempChart");
     const ctx = canvasEl.getContext("2d");
     setupAvatarClickHandler(canvasEl);
@@ -626,7 +642,8 @@ async function loadAndRender(){
                 if(!items.length) return "";
                 const iso = results[0].timestamps[items[0].dataIndex];
                 if(!iso) return "";
-                return `${moonPhase(iso.slice(0,10)).emoji} ${formatTooltipDateTime(iso)}`;
+                const base = `${moonPhase(iso.slice(0,10)).emoji} ${formatTooltipDateTime(iso)}`;
+                return activeAvatarLabel ? `${activeAvatarLabel} · ${base}` : base;
               },
               afterTitle: (items) => {
                 if(!items.length) return "";
