@@ -312,6 +312,7 @@ const avatarPlugin = {
     chartInstance.data.datasets.forEach((ds, i) => {
       if(!ds.avatarPoint) return;
       const meta = chartInstance.getDatasetMeta(i);
+      if(meta.hidden) return;
       const idx = ds.avatarPoint.index;
       const point = meta.data[idx];
       if(!point) return;
