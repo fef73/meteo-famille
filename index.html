@@ -89,6 +89,26 @@
     padding:22px 20px 10px;
   }
   .chart-holder{position:relative; height:min(58vh, 480px);}
+  .avatar-stats-popup{
+    position:absolute; z-index:20; min-width:220px; max-width:260px;
+    background:var(--bg-card, #132539); border:1px solid var(--hairline, #22384f);
+    border-radius:10px; padding:12px 14px; font-family:'Space Grotesk', sans-serif;
+    font-size:13px; color:#f3f6f9; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+    display:none; pointer-events:none;
+  }
+  .avatar-stats-popup .asp-title{
+    font-weight:600; margin-bottom:8px; display:flex; align-items:center; gap:6px;
+  }
+  .avatar-stats-popup .asp-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:#8fa4b8;
+    padding:4px 0; border-top:1px solid var(--hairline, #22384f);
+  }
+  .avatar-stats-popup .asp-row:first-of-type{border-top:none;}
+  .avatar-stats-popup .asp-row b{color:#f3f6f9; font-weight:600;}
+  .avatar-stats-popup .asp-loading{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color:#8fa4b8; padding:6px 0;
+  }
   #chart-status{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     font-family:'IBM Plex Mono', monospace; color:var(--text-lo); font-size:13px;
@@ -185,6 +205,7 @@
   <div class="panel">
     <div class="chart-holder">
       <div id="chart-status">Récupération des données Open-Meteo…</div>
+      <div id="avatar-stats-popup" class="avatar-stats-popup"></div>
       <canvas id="tempChart"></canvas>
     </div>
     <div class="legend-row" id="legend-row"></div>
@@ -215,6 +236,7 @@ const CITIES = [
 
 let chart;
 let activeAvatarLabel = null;
+const historicalStatsCache = {}; // clé = city.key -> {canicule, gel} | Promise
 const avatarImgCache = {};
 function getAvatarImg(key){
   if(!avatarImgCache[key]){
@@ -280,6 +302,45 @@ function formatTooltipDateTime(iso){
   const date = new Date(y, m - 1, d);
   const dateStr = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
   return `${dateStr} · ${timePart.slice(0, 5)}`;
+}
+
+// Récupère (avec cache) le nombre de jours de canicule (Tmax >= 35°C) et de gel (Tmin <= 0°C)
+// sur les 365 derniers jours pour une ville, via l'API archive d'Open-Meteo.
+const CANICULE_SEUIL_ANNUEL = 35;
+const GEL_SEUIL_ANNUEL = 0;
+function getYearlyExtremeStats(city){
+  if(historicalStatsCache[city.key]) return historicalStatsCache[city.key];
+
+  const toISODate = (d) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const endDate = new Date(today); endDate.setDate(endDate.getDate() - 2); // marge : les données archive récentes ne sont pas toujours dispo
+  const startDate = new Date(endDate); startDate.setDate(startDate.getDate() - 365);
+
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}` +
+    `&start_date=${toISODate(startDate)}&end_date=${toISODate(endDate)}` +
+    `&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+
+  const promise = fetch(url)
+    .then(res => {
+      if(!res.ok) throw new Error("Erreur API archive pour " + city.name);
+      return res.json();
+    })
+    .then(data => {
+      const max = data.daily.temperature_2m_max || [];
+      const min = data.daily.temperature_2m_min || [];
+      const canicule = max.filter(v => v != null && v >= CANICULE_SEUIL_ANNUEL).length;
+      const gel = min.filter(v => v != null && v <= GEL_SEUIL_ANNUEL).length;
+      const stats = { canicule, gel, days: max.length };
+      historicalStatsCache[city.key] = stats; // remplace la promesse par le résultat définitif
+      return stats;
+    })
+    .catch(err => {
+      delete historicalStatsCache[city.key]; // on retentera au prochain clic
+      throw err;
+    });
+
+  historicalStatsCache[city.key] = promise;
+  return promise;
 }
 
 function weatherEmoji(code){
@@ -349,6 +410,8 @@ const avatarPlugin = {
           index: idx,
           pointX: point.x,
           pointY: point.y,
+          label: ds.avatarPoint.label,
+          city: ds.avatarPoint.city,
         });
       }
     });
@@ -364,9 +427,51 @@ function findAvatarHitbox(chartInstance, xPx, yPx){
   return null;
 }
 
+function hideAvatarStatsPopup(){
+  const popup = document.getElementById("avatar-stats-popup");
+  if(popup) popup.style.display = "none";
+}
+
+function showAvatarStatsPopup(hb, chartHolderEl){
+  const popup = document.getElementById("avatar-stats-popup");
+  if(!popup) return;
+
+  // positionnement près de l'avatar cliqué, en évitant de sortir du cadre
+  const holderWidth = chartHolderEl.clientWidth;
+  let left = hb.pointX - 110;
+  left = Math.max(6, Math.min(left, holderWidth - 226));
+  const top = hb.pointY + 40;
+
+  popup.style.left = left + "px";
+  popup.style.top = top + "px";
+  popup.style.display = "block";
+  popup.innerHTML = `
+    <div class="asp-title">📊 ${hb.label} — ${hb.city.name}</div>
+    <div class="asp-loading">Calcul sur les 12 derniers mois…</div>
+  `;
+
+  getYearlyExtremeStats(hb.city).then(stats => {
+    // si l'utilisateur a fermé ou cliqué ailleurs entre temps, on ne réaffiche pas
+    if(popup.style.display === "none") return;
+    popup.innerHTML = `
+      <div class="asp-title">📊 ${hb.label} — ${hb.city.name}</div>
+      <div class="asp-row">🔥 Jours de canicule (≥ ${CANICULE_SEUIL_ANNUEL}°C) <b>${stats.canicule}</b></div>
+      <div class="asp-row">❄️ Jours de gel (≤ ${GEL_SEUIL_ANNUEL}°C) <b>${stats.gel}</b></div>
+      <div class="asp-row" style="border-top:none; opacity:.6;">sur les 12 derniers mois</div>
+    `;
+  }).catch(() => {
+    if(popup.style.display === "none") return;
+    popup.innerHTML = `
+      <div class="asp-title">📊 ${hb.label} — ${hb.city.name}</div>
+      <div class="asp-loading">Impossible de charger l'historique.</div>
+    `;
+  });
+}
+
 function setupAvatarClickHandler(canvasEl){
   if(canvasEl._avatarHandlersBound) return;
   canvasEl._avatarHandlersBound = true;
+  const chartHolderEl = canvasEl.closest(".chart-holder") || canvasEl.parentElement;
 
   canvasEl.addEventListener("click", (evt) => {
     if(!chart) return;
@@ -376,7 +481,8 @@ function setupAvatarClickHandler(canvasEl){
     const hb = findAvatarHitbox(chart, x, y);
 
     if(!hb){
-      // clic ailleurs sur le graphique : on referme le tooltip déclenché par un avatar
+      // clic ailleurs sur le graphique : on referme le tooltip et la popup déclenchés par un avatar
+      hideAvatarStatsPopup();
       if(activeAvatarLabel !== null){
         activeAvatarLabel = null;
         chart.setActiveElements([]);
@@ -393,6 +499,8 @@ function setupAvatarClickHandler(canvasEl){
       { x: hb.pointX, y: hb.pointY }
     );
     chart.update();
+
+    if(hb.city) showAvatarStatsPopup(hb, chartHolderEl);
   });
 
   canvasEl.addEventListener("mousemove", (evt) => {
@@ -609,7 +717,7 @@ async function loadAndRender(){
           fill: false,
           hidden: false,
           showLine: false,
-          avatarPoint: { index: maxIdx, key: p.key, label: p.name, dx, dy, realDatasetIndex: resultIdx },
+          avatarPoint: { index: maxIdx, key: p.key, label: p.name, dx, dy, realDatasetIndex: resultIdx, city: r.city },
           legend: { display:false },
         });
       });
@@ -617,6 +725,7 @@ async function loadAndRender(){
 
     if(chart) chart.destroy();
     activeAvatarLabel = null;
+    hideAvatarStatsPopup();
     const canvasEl = document.getElementById("tempChart");
     const ctx = canvasEl.getContext("2d");
     setupAvatarClickHandler(canvasEl);
