@@ -150,7 +150,9 @@
     margin-top:10px; padding-top:9px;
   }
   .card-yearly b{color:var(--text-hi); font-weight:500;}
-  .card-yearly .cy-label{white-space:nowrap;}
+  .card-yearly .cy-label{white-space:normal; min-width:0;}
+  .card-yearly{ flex-wrap:wrap; row-gap:2px; }
+  .card-yearly b{ flex:none; margin-left:auto; }
   .card-yearly-header{
     display:flex; align-items:center; gap:6px; margin-top:10px; padding-top:9px;
     border-top:1px solid var(--hairline);
@@ -638,7 +640,7 @@ function buildCards(results){
           <b id="yearly-gel-${r.city.key}">…</b>
         </div>
         <div class="card-yearly" title="Jours où la rafale de vent maximale a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus, sur les 365 derniers jours.">
-          <span class="cy-label">💨 vent fort (rafales ≥${VENT_SEUIL_ANNUEL} km/h)</span>
+          <span class="cy-label">💨 vent rafales ≥${VENT_SEUIL_ANNUEL} km/h</span>
           <b id="yearly-vent-${r.city.key}">…</b>
         </div>
         <div class="card-yearly" title="Jours où l'indice de qualité de l'air européen (AQI) a atteint ${AQI_SEUIL_ANNUEL} ou plus (mauvaise qualité d'air et au-delà), sur les 365 derniers jours.">
