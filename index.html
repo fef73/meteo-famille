@@ -307,10 +307,12 @@ function formatTooltipDateTime(iso){
   return `${dateStr} · ${timePart.slice(0, 5)}`;
 }
 
-// Récupère (avec cache) le nombre de jours de canicule (Tmax >= 35°C) et de gel (Tmin <= 0°C)
-// sur les 365 derniers jours pour une ville, via l'API archive d'Open-Meteo.
+// Récupère (avec cache) le nombre de jours de canicule (Tmax >= 35°C), de gel (Tmin <= 0°C)
+// et de vent fort (rafale/vent max journalier >= 50 km/h) sur les 365 derniers jours pour une
+// ville, via l'API archive d'Open-Meteo.
 const CANICULE_SEUIL_ANNUEL = 35;
 const GEL_SEUIL_ANNUEL = 0;
+const VENT_SEUIL_ANNUEL = 50; // km/h
 function getYearlyExtremeStats(city){
   if(historicalStatsCache[city.key]) return Promise.resolve(historicalStatsCache[city.key]);
 
@@ -321,7 +323,7 @@ function getYearlyExtremeStats(city){
 
   const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}` +
     `&start_date=${toISODate(startDate)}&end_date=${toISODate(endDate)}` +
-    `&daily=temperature_2m_max,temperature_2m_min&timezone=auto`;
+    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max&timezone=auto`;
 
   const promise = fetch(url)
     .then(res => {
@@ -331,9 +333,11 @@ function getYearlyExtremeStats(city){
     .then(data => {
       const max = data.daily.temperature_2m_max || [];
       const min = data.daily.temperature_2m_min || [];
+      const wind = data.daily.wind_speed_10m_max || [];
       const canicule = max.filter(v => v != null && v >= CANICULE_SEUIL_ANNUEL).length;
       const gel = min.filter(v => v != null && v <= GEL_SEUIL_ANNUEL).length;
-      const stats = { canicule, gel, days: max.length };
+      const ventFort = wind.filter(v => v != null && v >= VENT_SEUIL_ANNUEL).length;
+      const stats = { canicule, gel, ventFort, days: max.length };
       historicalStatsCache[city.key] = stats; // remplace la promesse par le résultat définitif
       return stats;
     })
@@ -623,7 +627,7 @@ function buildCards(results){
         </div>
         <div class="card-yearly-header">
           <span>Extrêmes sur 365 jours</span>
-          <i class="cy-info" title="Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus (canicule) ; la température minimale est descendue à ${GEL_SEUIL_ANNUEL}°C ou moins (gel) ; l'indice de qualité de l'air européen a atteint ${AQI_SEUIL_ANNUEL} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.">i</i>
+          <i class="cy-info" title="Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus (canicule) ; la température minimale est descendue à ${GEL_SEUIL_ANNUEL}°C ou moins (gel) ; le vent maximal a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint ${AQI_SEUIL_ANNUEL} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.">i</i>
         </div>
         <div class="card-yearly" title="Jours où la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus, sur les 365 derniers jours.">
           <span class="cy-label">🔥 canicule (≥${CANICULE_SEUIL_ANNUEL}°C)</span>
@@ -632,6 +636,10 @@ function buildCards(results){
         <div class="card-yearly" title="Jours où la température minimale est descendue à ${GEL_SEUIL_ANNUEL}°C ou moins, sur les 365 derniers jours.">
           <span class="cy-label">❄️ gel (≤${GEL_SEUIL_ANNUEL}°C)</span>
           <b id="yearly-gel-${r.city.key}">…</b>
+        </div>
+        <div class="card-yearly" title="Jours où le vent maximal a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus, sur les 365 derniers jours.">
+          <span class="cy-label">💨 vent fort (≥${VENT_SEUIL_ANNUEL} km/h)</span>
+          <b id="yearly-vent-${r.city.key}">…</b>
         </div>
         <div class="card-yearly" title="Jours où l'indice de qualité de l'air européen (AQI) a atteint ${AQI_SEUIL_ANNUEL} ou plus (mauvaise qualité d'air et au-delà), sur les 365 derniers jours.">
           <span class="cy-label">🌫️ pollution (AQI ≥${AQI_SEUIL_ANNUEL})</span>
@@ -642,19 +650,23 @@ function buildCards(results){
     `;
   }).join("");
 
-  // charge (avec cache, une seule fois par ville) le nombre de jours de canicule/gel
+  // charge (avec cache, une seule fois par ville) le nombre de jours de canicule/gel/vent fort
   // sur les 12 derniers mois, et remplit les cartes dès que la réponse arrive
   results.forEach(r => {
     getYearlyExtremeStats(r.city).then(stats => {
       const caniculeEl = document.getElementById("yearly-canicule-" + r.city.key);
       const gelEl = document.getElementById("yearly-gel-" + r.city.key);
+      const ventEl = document.getElementById("yearly-vent-" + r.city.key);
       if(caniculeEl) caniculeEl.textContent = stats.canicule;
       if(gelEl) gelEl.textContent = stats.gel;
+      if(ventEl) ventEl.textContent = stats.ventFort;
     }).catch(() => {
       const caniculeEl = document.getElementById("yearly-canicule-" + r.city.key);
       const gelEl = document.getElementById("yearly-gel-" + r.city.key);
+      const ventEl = document.getElementById("yearly-vent-" + r.city.key);
       if(caniculeEl) caniculeEl.textContent = "--";
       if(gelEl) gelEl.textContent = "--";
+      if(ventEl) ventEl.textContent = "--";
     });
 
     getYearlyAqiStats(r.city).then(stats => {
