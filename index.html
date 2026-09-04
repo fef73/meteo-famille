@@ -329,6 +329,53 @@ function getYearlyExtremeStats(city){
   return promise;
 }
 
+// Récupère (avec cache) le nombre de jours de mauvaise qualité de l'air (indice européen AQI >= 60)
+// sur les 365 derniers jours pour une ville, via l'API qualité de l'air d'Open-Meteo.
+const aqiStatsCache = {}; // clé = city.key -> {aqiJours, days} | Promise
+const AQI_SEUIL_ANNUEL = 60; // échelle European AQI d'Open-Meteo : 60 = "mauvaise" qualité d'air et au-delà
+function getYearlyAqiStats(city){
+  if(aqiStatsCache[city.key]) return Promise.resolve(aqiStatsCache[city.key]);
+
+  const toISODate = (d) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const endDate = new Date(today); endDate.setDate(endDate.getDate() - 2); // marge : données récentes pas toujours dispo
+  const startDate = new Date(endDate); startDate.setDate(startDate.getDate() - 365);
+
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}` +
+    `&start_date=${toISODate(startDate)}&end_date=${toISODate(endDate)}` +
+    `&hourly=european_aqi&timezone=auto`;
+
+  const promise = fetch(url)
+    .then(res => {
+      if(!res.ok) throw new Error("Erreur API qualité de l'air pour " + city.name);
+      return res.json();
+    })
+    .then(data => {
+      const times = (data.hourly && data.hourly.time) || [];
+      const values = (data.hourly && data.hourly.european_aqi) || [];
+      // on regroupe les valeurs horaires par jour, et on retient le max journalier
+      const dailyMax = {};
+      times.forEach((t, i) => {
+        const day = t.slice(0, 10);
+        const v = values[i];
+        if(v == null) return;
+        if(dailyMax[day] == null || v > dailyMax[day]) dailyMax[day] = v;
+      });
+      const dayValues = Object.values(dailyMax);
+      const aqiJours = dayValues.filter(v => v >= AQI_SEUIL_ANNUEL).length;
+      const stats = { aqiJours, days: dayValues.length };
+      aqiStatsCache[city.key] = stats;
+      return stats;
+    })
+    .catch(err => {
+      delete aqiStatsCache[city.key]; // on retentera à la prochaine tentative
+      throw err;
+    });
+
+  aqiStatsCache[city.key] = promise;
+  return promise;
+}
+
 function weatherEmoji(code){
   if(code == null) return "🌡️";
   if(code === 0) return "☀️";
@@ -565,6 +612,10 @@ function buildCards(results){
           <span class="cy-label">❄️ gel (≤${GEL_SEUIL_ANNUEL}°C)</span>
           <b id="yearly-gel-${r.city.key}">…</b>
         </div>
+        <div class="card-yearly">
+          <span class="cy-label">🌫️ pollution (AQI ≥${AQI_SEUIL_ANNUEL})</span>
+          <b id="yearly-aqi-${r.city.key}">…</b>
+        </div>
       </div>
     `;
   }).join("");
@@ -582,6 +633,14 @@ function buildCards(results){
       const gelEl = document.getElementById("yearly-gel-" + r.city.key);
       if(caniculeEl) caniculeEl.textContent = "--";
       if(gelEl) gelEl.textContent = "--";
+    });
+
+    getYearlyAqiStats(r.city).then(stats => {
+      const aqiEl = document.getElementById("yearly-aqi-" + r.city.key);
+      if(aqiEl) aqiEl.textContent = stats.aqiJours;
+    }).catch(() => {
+      const aqiEl = document.getElementById("yearly-aqi-" + r.city.key);
+      if(aqiEl) aqiEl.textContent = "--";
     });
   });
 }
