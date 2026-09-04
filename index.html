@@ -312,7 +312,7 @@ function formatTooltipDateTime(iso){
 // ville, via l'API archive d'Open-Meteo.
 const CANICULE_SEUIL_ANNUEL = 35;
 const GEL_SEUIL_ANNUEL = 0;
-const VENT_SEUIL_ANNUEL = 50; // km/h
+const VENT_SEUIL_ANNUEL = 60; // km/h, en rafale
 function getYearlyExtremeStats(city){
   if(historicalStatsCache[city.key]) return Promise.resolve(historicalStatsCache[city.key]);
 
@@ -323,7 +323,7 @@ function getYearlyExtremeStats(city){
 
   const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${city.lat}&longitude=${city.lon}` +
     `&start_date=${toISODate(startDate)}&end_date=${toISODate(endDate)}` +
-    `&daily=temperature_2m_max,temperature_2m_min,wind_speed_10m_max&timezone=auto`;
+    `&daily=temperature_2m_max,temperature_2m_min,wind_gusts_10m_max&timezone=auto`;
 
   const promise = fetch(url)
     .then(res => {
@@ -333,7 +333,7 @@ function getYearlyExtremeStats(city){
     .then(data => {
       const max = data.daily.temperature_2m_max || [];
       const min = data.daily.temperature_2m_min || [];
-      const wind = data.daily.wind_speed_10m_max || [];
+      const wind = data.daily.wind_gusts_10m_max || [];
       const canicule = max.filter(v => v != null && v >= CANICULE_SEUIL_ANNUEL).length;
       const gel = min.filter(v => v != null && v <= GEL_SEUIL_ANNUEL).length;
       const ventFort = wind.filter(v => v != null && v >= VENT_SEUIL_ANNUEL).length;
@@ -627,7 +627,7 @@ function buildCards(results){
         </div>
         <div class="card-yearly-header">
           <span>Extrêmes sur 365 jours</span>
-          <i class="cy-info" title="Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus (canicule) ; la température minimale est descendue à ${GEL_SEUIL_ANNUEL}°C ou moins (gel) ; le vent maximal a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint ${AQI_SEUIL_ANNUEL} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.">i</i>
+          <i class="cy-info" title="Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus (canicule) ; la température minimale est descendue à ${GEL_SEUIL_ANNUEL}°C ou moins (gel) ; la rafale de vent maximale a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint ${AQI_SEUIL_ANNUEL} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.">i</i>
         </div>
         <div class="card-yearly" title="Jours où la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus, sur les 365 derniers jours.">
           <span class="cy-label">🔥 canicule (≥${CANICULE_SEUIL_ANNUEL}°C)</span>
@@ -637,8 +637,8 @@ function buildCards(results){
           <span class="cy-label">❄️ gel (≤${GEL_SEUIL_ANNUEL}°C)</span>
           <b id="yearly-gel-${r.city.key}">…</b>
         </div>
-        <div class="card-yearly" title="Jours où le vent maximal a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus, sur les 365 derniers jours.">
-          <span class="cy-label">💨 vent fort (≥${VENT_SEUIL_ANNUEL} km/h)</span>
+        <div class="card-yearly" title="Jours où la rafale de vent maximale a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus, sur les 365 derniers jours.">
+          <span class="cy-label">💨 vent fort (rafales ≥${VENT_SEUIL_ANNUEL} km/h)</span>
           <b id="yearly-vent-${r.city.key}">…</b>
         </div>
         <div class="card-yearly" title="Jours où l'indice de qualité de l'air européen (AQI) a atteint ${AQI_SEUIL_ANNUEL} ou plus (mauvaise qualité d'air et au-delà), sur les 365 derniers jours.">
