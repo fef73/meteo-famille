@@ -243,6 +243,8 @@
 
   <div class="cards" id="cards"></div>
 
+  <div class="bulletin" id="bulletin-period"></div>
+
   <div class="bulletin" id="bulletin"></div>
 
   <footer>
@@ -603,6 +605,66 @@ function buildLegend(){
   });
 }
 
+// Seuils utilisés pour les alertes du bulletin de la période sélectionnée (aujourd'hui/demain/etc.)
+const PERIOD_CANICULE_SEUIL = 35;
+const PERIOD_GEL_SEUIL = 0;
+
+function periodLabel(){
+  if(viewDay === "tomorrow") return "demain";
+  if(viewDay === "afterTomorrow") return "après-demain";
+  if(viewDay === "threeDays") return "sur les 3 prochains jours";
+  if(viewDay === "sevenDays") return "sur les 7 prochains jours";
+  return "aujourd'hui";
+}
+
+// Bulletin synchrone basé uniquement sur les données déjà récupérées pour la période
+// actuellement sélectionnée (pas d'appel API supplémentaire).
+function buildPeriodBulletin(results){
+  const el = document.getElementById("bulletin-period");
+  if(!el) return;
+  if(!results || !results.length){ el.innerHTML = ""; return; }
+
+  const cityLabel = (city) => city.people.map(p => p.name).join(" & ") + " (" + city.name + ")";
+
+  const stats = results.map(r => ({
+    city: r.city,
+    max: Math.max(...r.temps),
+    min: Math.min(...r.temps),
+  }));
+
+  const hottest = stats.reduce((a, b) => b.max > a.max ? b : a);
+  const coldest = stats.reduce((a, b) => b.min < a.min ? b : a);
+  const label = periodLabel();
+
+  let summaryText = `${cityLabel(hottest.city)} tient la tête ${label} avec ${hottest.max.toFixed(1)}°C`;
+  if(coldest.city.key !== hottest.city.key){
+    summaryText += `, tandis que ${cityLabel(coldest.city)} est la plus fraîche avec ${coldest.min.toFixed(1)}°C`;
+  }
+  summaryText += ".";
+
+  const alerts = [];
+  stats.forEach(s => {
+    if(s.max >= PERIOD_CANICULE_SEUIL){
+      alerts.push({ type: "canicule", icon: "🔥", text: `${cityLabel(s.city)} : pic à ${s.max.toFixed(1)}°C ${label}, seuil canicule (${PERIOD_CANICULE_SEUIL}°C) dépassé.` });
+    }
+    if(s.min <= PERIOD_GEL_SEUIL){
+      alerts.push({ type: "gel", icon: "❄️", text: `${cityLabel(s.city)} : minimale de ${s.min.toFixed(1)}°C ${label}, risque de gel.` });
+    }
+  });
+
+  const alertsHtml = alerts.length
+    ? `<div class="bulletin-alerts">${alerts.map(a =>
+        `<div class="bulletin-alert bulletin-alert-${a.type}"><span class="bulletin-alert-icon">${a.icon}</span>${a.text}</div>`
+      ).join("")}</div>`
+    : "";
+
+  el.innerHTML = `
+    <div class="bulletin-header">📅 bulletin — ${label}</div>
+    <div class="bulletin-summary">${summaryText}</div>
+    ${alertsHtml}
+  `;
+}
+
 function buildCards(results){
   const cardsEl = document.getElementById("cards");
   cardsEl.innerHTML = results.map(r => {
@@ -953,6 +1015,7 @@ async function loadAndRender(){
 
     buildLegend();
     buildCards(results);
+    buildPeriodBulletin(results);
 
     const now = new Date();
     const dateStr = now.toLocaleDateString("fr-FR", { day:"numeric", month:"long" });
