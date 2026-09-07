@@ -170,6 +170,32 @@
     opacity:.9; margin-top:6px; line-height:1.4;
   }
 
+  .bulletin{
+    background:var(--bg-panel); border:1px solid var(--hairline); border-radius:16px;
+    padding:20px 22px 22px; margin-top:22px;
+  }
+  .bulletin:empty{display:none;}
+  .bulletin-header{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--live); margin-bottom:10px; display:flex; align-items:center; gap:8px;
+  }
+  .bulletin-summary{
+    font-size:14.5px; line-height:1.65; color:var(--text-hi); max-width:70ch;
+  }
+  .bulletin-alerts{
+    display:flex; flex-direction:column; gap:8px; margin-top:14px;
+  }
+  .bulletin-alert{
+    display:flex; align-items:center; gap:10px;
+    font-family:'IBM Plex Mono', monospace; font-size:12.5px; line-height:1.4;
+    padding:10px 12px; border-radius:10px; border:1px solid var(--hairline);
+    background:rgba(255,255,255,0.02);
+  }
+  .bulletin-alert-icon{font-size:16px; flex:none;}
+  .bulletin-alert-canicule{ border-color:rgba(230,57,70,.4); color:#ffb4ab; background:rgba(230,57,70,.08); }
+  .bulletin-alert-gel{ border-color:rgba(72,202,228,.4); color:#a8e8f7; background:rgba(72,202,228,.08); }
+  .bulletin-alert-pollution{ border-color:rgba(143,164,184,.4); color:var(--text-lo); background:rgba(143,164,184,.1); }
+
   footer{
     margin-top:30px; font-family:'IBM Plex Mono', monospace; font-size:11px;
     color:var(--text-lo); text-align:center; line-height:1.7;
@@ -216,6 +242,8 @@
   </div>
 
   <div class="cards" id="cards"></div>
+
+  <div class="bulletin" id="bulletin"></div>
 
   <footer>
     Source des températures : Open-Meteo.com (prévisions horaires, sans clé API) · Fuseau horaire local à chaque ville<br>
@@ -656,8 +684,8 @@ function buildCards(results){
 
   // charge (avec cache, une seule fois par ville) le nombre de jours de canicule/gel/vent fort
   // sur les 12 derniers mois, et remplit les cartes dès que la réponse arrive
-  results.forEach(r => {
-    getYearlyExtremeStats(r.city).then(stats => {
+  const statPromises = results.map(r => {
+    const extremesPromise = getYearlyExtremeStats(r.city).then(stats => {
       const caniculeEl = document.getElementById("yearly-canicule-" + r.city.key);
       const gelEl = document.getElementById("yearly-gel-" + r.city.key);
       const ventEl = document.getElementById("yearly-vent-" + r.city.key);
@@ -673,14 +701,95 @@ function buildCards(results){
       if(ventEl) ventEl.textContent = "--";
     });
 
-    getYearlyAqiStats(r.city).then(stats => {
+    const aqiPromise = getYearlyAqiStats(r.city).then(stats => {
       const aqiEl = document.getElementById("yearly-aqi-" + r.city.key);
       if(aqiEl) aqiEl.textContent = stats.aqiJours;
     }).catch(() => {
       const aqiEl = document.getElementById("yearly-aqi-" + r.city.key);
       if(aqiEl) aqiEl.textContent = "--";
     });
+
+    return Promise.allSettled([extremesPromise, aqiPromise]);
   });
+
+  // une fois les statistiques 365 jours chargées pour tout le monde, on compose le bulletin
+  Promise.all(statPromises).then(() => buildBulletin(results));
+}
+
+// Seuils au-delà desquels une alerte est affichée dans le bulletin (sur 365 jours)
+const BULLETIN_ALERT_CANICULE = 5;
+const BULLETIN_ALERT_GEL = 30;
+const BULLETIN_ALERT_AQI = 40;
+
+function buildBulletin(results){
+  const el = document.getElementById("bulletin");
+  if(!el) return;
+
+  const cityLabel = (city) => city.people.map(p => p.name).join(" & ") + " (" + city.name + ")";
+
+  const entries = results.map(r => {
+    const ex = historicalStatsCache[r.city.key];
+    const aqi = aqiStatsCache[r.city.key];
+    return {
+      city: r.city,
+      canicule: (ex && typeof ex.canicule === "number") ? ex.canicule : null,
+      gel: (ex && typeof ex.gel === "number") ? ex.gel : null,
+      aqiJours: (aqi && typeof aqi.aqiJours === "number") ? aqi.aqiJours : null,
+    };
+  });
+
+  const withCanicule = entries.filter(e => e.canicule != null);
+  const withGel = entries.filter(e => e.gel != null);
+  const withAqi = entries.filter(e => e.aqiJours != null);
+
+  if(!withCanicule.length && !withGel.length && !withAqi.length){
+    el.innerHTML = "";
+    return;
+  }
+
+  const topCanicule = withCanicule.length ? withCanicule.reduce((a, b) => b.canicule > a.canicule ? b : a) : null;
+  const topGel = withGel.length ? withGel.reduce((a, b) => b.gel > a.gel ? b : a) : null;
+  const topAqi = withAqi.length ? withAqi.reduce((a, b) => b.aqiJours > a.aqiJours ? b : a) : null;
+
+  const summaryParts = [];
+  if(topCanicule && topCanicule.canicule > 0){
+    summaryParts.push(`${cityLabel(topCanicule.city)} a pris le plus chaud, avec ${topCanicule.canicule} jour${topCanicule.canicule > 1 ? "s" : ""} de canicule (≥${CANICULE_SEUIL_ANNUEL}°C)`);
+  }
+  if(topGel && topGel.gel > 0){
+    summaryParts.push(`${cityLabel(topGel.city)} a le plus gelé, avec ${topGel.gel} jour${topGel.gel > 1 ? "s" : ""} (≤${GEL_SEUIL_ANNUEL}°C)`);
+  }
+  if(topAqi && topAqi.aqiJours > 0){
+    summaryParts.push(`${cityLabel(topAqi.city)} a respiré le plus mauvais air, avec ${topAqi.aqiJours} jour${topAqi.aqiJours > 1 ? "s" : ""} de pollution (AQI ≥${AQI_SEUIL_ANNUEL})`);
+  }
+
+  const summaryText = summaryParts.length
+    ? "Sur les 365 derniers jours : " + summaryParts.join(" · ") + "."
+    : "Sur les 365 derniers jours, aucun épisode extrême marquant n'a été relevé chez la famille.";
+
+  const alerts = [];
+  entries.forEach(e => {
+    if(e.canicule != null && e.canicule >= BULLETIN_ALERT_CANICULE){
+      alerts.push({ type: "canicule", icon: "🔥", text: `${cityLabel(e.city)} : ${e.canicule} jours de canicule sur les 365 derniers jours.` });
+    }
+    if(e.gel != null && e.gel >= BULLETIN_ALERT_GEL){
+      alerts.push({ type: "gel", icon: "❄️", text: `${cityLabel(e.city)} : ${e.gel} jours de gel sur les 365 derniers jours.` });
+    }
+    if(e.aqiJours != null && e.aqiJours >= BULLETIN_ALERT_AQI){
+      alerts.push({ type: "pollution", icon: "🌫️", text: `${cityLabel(e.city)} : ${e.aqiJours} jours de mauvaise qualité d'air sur les 365 derniers jours.` });
+    }
+  });
+
+  const alertsHtml = alerts.length
+    ? `<div class="bulletin-alerts">${alerts.map(a =>
+        `<div class="bulletin-alert bulletin-alert-${a.type}"><span class="bulletin-alert-icon">${a.icon}</span>${a.text}</div>`
+      ).join("")}</div>`
+    : "";
+
+  el.innerHTML = `
+    <div class="bulletin-header">📋 bulletin météo</div>
+    <div class="bulletin-summary">${summaryText}</div>
+    ${alertsHtml}
+  `;
 }
 
 async function loadAndRender(){
