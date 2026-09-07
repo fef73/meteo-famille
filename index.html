@@ -144,6 +144,11 @@
     font-size:11.5px; color:var(--text-lo); border-top:1px solid var(--hairline); padding-top:9px;
   }
   .card-range b{color:var(--text-hi); font-weight:500;}
+  .card-aqi-avg{
+    display:flex; justify-content:space-between; align-items:center; font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; color:var(--text-lo); margin-top:8px; cursor:help;
+  }
+  .card-aqi-avg b{color:var(--text-hi); font-weight:500;}
   .card-yearly{
     display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace;
     font-size:11.5px; color:var(--text-lo); border-top:1px solid var(--hairline);
@@ -835,6 +840,10 @@ function buildCards(results){
           <span>min <b>${min}°</b></span>
           <span>max <b>${max}°</b></span>
         </div>
+        <div class="card-aqi-avg" title="Moyenne des indices de qualité de l'air (AQI) maximaux quotidiens, sur les 7 derniers jours complets.">
+          <span>🌫️ AQI moyen (7j)</span>
+          <b id="aqi-avg-${r.city.key}">…</b>
+        </div>
         <div class="card-yearly-header">
           <span>Extrêmes sur 365 jours</span>
           <i class="cy-info" title="Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint ${CANICULE_SEUIL_ANNUEL}°C ou plus (canicule) ; la température minimale est descendue à ${GEL_SEUIL_ANNUEL}°C ou moins (gel) ; la rafale de vent maximale a atteint ${VENT_SEUIL_ANNUEL} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint ${AQI_SEUIL_ANNUEL} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.">i</i>
@@ -887,7 +896,22 @@ function buildCards(results){
       if(aqiEl) aqiEl.textContent = "--";
     });
 
-    return Promise.allSettled([extremesPromise, aqiPromise]);
+    const recentAqiAvgPromise = getRecentAqiHistory(r.city).then(stats => {
+      const avgEl = document.getElementById("aqi-avg-" + r.city.key);
+      if(avgEl){
+        if(stats.days.length){
+          const avg = stats.days.reduce((sum, d) => sum + d.aqiMax, 0) / stats.days.length;
+          avgEl.textContent = Math.round(avg);
+        } else {
+          avgEl.textContent = "--";
+        }
+      }
+    }).catch(() => {
+      const avgEl = document.getElementById("aqi-avg-" + r.city.key);
+      if(avgEl) avgEl.textContent = "--";
+    });
+
+    return Promise.allSettled([extremesPromise, aqiPromise, recentAqiAvgPromise]);
   });
 
   // une fois les statistiques 365 jours chargées pour tout le monde, on compose le bulletin
