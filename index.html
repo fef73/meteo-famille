@@ -196,6 +196,31 @@
   .bulletin-alert-gel{ border-color:rgba(72,202,228,.4); color:#a8e8f7; background:rgba(72,202,228,.08); }
   .bulletin-alert-pollution{ border-color:rgba(143,164,184,.4); color:var(--text-lo); background:rgba(143,164,184,.1); }
 
+  .bulletin-aqi-history{
+    margin-top:16px; padding-top:14px; border-top:1px solid var(--hairline);
+  }
+  .bulletin-aqi-history:empty{display:none;}
+  .bulletin-aqi-header{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--text-lo); margin-bottom:10px;
+  }
+  .aqi-city-row{
+    display:flex; align-items:center; gap:12px; margin-bottom:9px; flex-wrap:wrap;
+  }
+  .aqi-city-row:last-child{margin-bottom:0;}
+  .aqi-city-name{
+    font-size:12px; font-family:'IBM Plex Mono', monospace; color:var(--text-hi); min-width:150px;
+  }
+  .aqi-chips{display:flex; gap:5px; flex-wrap:wrap;}
+  .aqi-chip{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; line-height:1.35; text-align:center;
+    color:var(--text-lo); background:rgba(255,255,255,.03); border:1px solid var(--hairline);
+    border-radius:8px; padding:4px 6px; min-width:28px;
+  }
+  .aqi-chip-bad{
+    color:#e8ecef; background:rgba(143,164,184,.18); border-color:rgba(143,164,184,.55); font-weight:600;
+  }
+
   footer{
     margin-top:30px; font-family:'IBM Plex Mono', monospace; font-size:11px;
     color:var(--text-lo); text-align:center; line-height:1.7;
@@ -662,7 +687,98 @@ function buildPeriodBulletin(results){
     <div class="bulletin-header">📅 bulletin — ${label}</div>
     <div class="bulletin-summary">${summaryText}</div>
     ${alertsHtml}
+    <div class="bulletin-aqi-history" id="bulletin-aqi-history"></div>
   `;
+
+  renderRecentAqiHistory(results);
+}
+
+// Historique pollution (AQI ≥ ${AQI_SEUIL_ANNUEL}) des 7 jours précédents, par ville — avec cache
+const recentAqiCache = {};
+function getRecentAqiHistory(city){
+  if(recentAqiCache[city.key]) return Promise.resolve(recentAqiCache[city.key]);
+
+  const toISODate = (d) => d.toISOString().slice(0, 10);
+  const today = new Date();
+  const endDate = new Date(today); endDate.setDate(endDate.getDate() - 1); // dernier jour complet
+  const startDate = new Date(endDate); startDate.setDate(startDate.getDate() - 6); // 7 jours au total
+
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}` +
+    `&start_date=${toISODate(startDate)}&end_date=${toISODate(endDate)}` +
+    `&hourly=european_aqi&timezone=auto`;
+
+  const promise = fetch(url)
+    .then(res => {
+      if(!res.ok) throw new Error("Erreur API qualité de l'air (7 jours) pour " + city.name);
+      return res.json();
+    })
+    .then(data => {
+      const times = (data.hourly && data.hourly.time) || [];
+      const values = (data.hourly && data.hourly.european_aqi) || [];
+      const dailyMax = {};
+      times.forEach((t, i) => {
+        const day = t.slice(0, 10);
+        const v = values[i];
+        if(v == null) return;
+        if(dailyMax[day] == null || v > dailyMax[day]) dailyMax[day] = v;
+      });
+      const days = Object.keys(dailyMax).sort().map(day => ({
+        date: day,
+        aqiMax: Math.round(dailyMax[day]),
+        exceeded: dailyMax[day] >= AQI_SEUIL_ANNUEL,
+      }));
+      const stats = { days, exceededCount: days.filter(d => d.exceeded).length };
+      recentAqiCache[city.key] = stats;
+      return stats;
+    })
+    .catch(err => {
+      delete recentAqiCache[city.key];
+      throw err;
+    });
+
+  recentAqiCache[city.key] = promise;
+  return promise;
+}
+
+function dayAbbrev(dateStr){
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
+}
+
+function renderRecentAqiHistory(results){
+  const container = document.getElementById("bulletin-aqi-history");
+  if(!container) return;
+
+  Promise.all(results.map(r =>
+    getRecentAqiHistory(r.city).then(stats => ({ city: r.city, stats, error: null }))
+      .catch(err => ({ city: r.city, stats: null, error: err }))
+  )).then(entries => {
+    const rowsHtml = entries.map(({ city, stats }) => {
+      const cityLabel = city.people.map(p => p.name).join(" & ") + " (" + city.name + ")";
+      if(!stats){
+        return `
+          <div class="aqi-city-row">
+            <span class="aqi-city-name">${cityLabel}</span>
+            <span class="aqi-chip">--</span>
+          </div>
+        `;
+      }
+      const chips = stats.days.map(d =>
+        `<span class="aqi-chip${d.exceeded ? " aqi-chip-bad" : ""}" title="${dayAbbrev(d.date)} ${d.date} · AQI ${d.aqiMax}">${dayAbbrev(d.date)}<br>${d.aqiMax}</span>`
+      ).join("");
+      return `
+        <div class="aqi-city-row">
+          <span class="aqi-city-name">${cityLabel}${stats.exceededCount > 0 ? ` · ${stats.exceededCount}/7 j ≥${AQI_SEUIL_ANNUEL}` : ""}</span>
+          <span class="aqi-chips">${chips}</span>
+        </div>
+      `;
+    }).join("");
+
+    container.innerHTML = `
+      <div class="bulletin-aqi-header">🌫️ historique pollution — 7 derniers jours (AQI ≥ ${AQI_SEUIL_ANNUEL})</div>
+      ${rowsHtml}
+    `;
+  });
 }
 
 function buildCards(results){
