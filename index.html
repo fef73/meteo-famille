@@ -316,6 +316,8 @@ function getAvatarImg(key){
 
 let viewDay = "today"; // "today" | "tomorrow" | "afterTomorrow" | "threeDays"
 const DAY_OFFSETS = { today: 0, tomorrow: 1, afterTomorrow: 2 };
+// Villes masquées via la légende : persiste quand on change de période (Aujourd'hui/Demain/...)
+const hiddenCities = new Set();
 
 async function fetchCity(city, opts = {}){
   const isMultiDay = viewDay === "threeDays" || viewDay === "sevenDays";
@@ -607,6 +609,16 @@ function buildLegend(){
   `;
   row.innerHTML = citiesHtml + caniculeHtml + gelHtml;
 
+  // Réappliquer l'état visuel (masqué/visible) mémorisé pour les villes,
+  // afin qu'il reste cohérent quand on change de période.
+  row.querySelectorAll(".legend-item").forEach(item => {
+    const label = item.dataset.legendLabel;
+    if(hiddenCities.has(label)){
+      item.style.opacity = 0.4;
+      item.style.textDecoration = "line-through";
+    }
+  });
+
   row.querySelectorAll(".legend-item").forEach(item => {
     item.addEventListener("click", () => {
       if(!chart) return;
@@ -617,9 +629,12 @@ function buildLegend(){
       const meta = chart.getDatasetMeta(idx);
       meta.hidden = meta.hidden === null ? !chart.data.datasets[idx].hidden : !meta.hidden;
 
-      // if hiding/showing a city line, also toggle its avatar marker dataset(s)
+      // Mémoriser l'état pour les villes, afin qu'il survive à un changement de période
       const city = CITIES.find(c => c.name === label);
       if(city){
+        if(meta.hidden) hiddenCities.add(label); else hiddenCities.delete(label);
+
+        // if hiding/showing a city line, also toggle its avatar marker dataset(s)
         const peopleNames = city.people.map(p => p.name);
         chart.data.datasets.forEach((ds, i) => {
           if(ds.avatarPoint && peopleNames.includes(ds.avatarPoint.label)){
@@ -1033,6 +1048,7 @@ async function loadAndRender(){
         pointHoverRadius: 4,
         tension: 0.35,
         fill: false,
+        hidden: hiddenCities.has(r.city.name),
       };
       return dsBase;
     });
@@ -1088,7 +1104,7 @@ async function loadAndRender(){
           pointRadius: 0,
           hoverRadius: 0,
           fill: false,
-          hidden: false,
+          hidden: hiddenCities.has(r.city.name),
           showLine: false,
           avatarPoint: { index: maxIdx, key: p.key, label: p.name, dx, dy, realDatasetIndex: resultIdx, city: r.city },
           legend: { display:false },
