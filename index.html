@@ -318,6 +318,11 @@ let viewDay = "today"; // "today" | "tomorrow" | "afterTomorrow" | "threeDays"
 const DAY_OFFSETS = { today: 0, tomorrow: 1, afterTomorrow: 2 };
 // Villes masquées via la légende : persiste quand on change de période (Aujourd'hui/Demain/...)
 const hiddenCities = new Set();
+// Dernier jeu de résultats récupéré (toutes villes), pour pouvoir refiltrer sans refetch
+let lastResults = [];
+function getVisibleResults(){
+  return lastResults.filter(r => !hiddenCities.has(r.city.name));
+}
 
 async function fetchCity(city, opts = {}){
   const isMultiDay = viewDay === "threeDays" || viewDay === "sevenDays";
@@ -641,6 +646,10 @@ function buildLegend(){
             chart.getDatasetMeta(i).hidden = meta.hidden;
           }
         });
+
+        // Rafraîchir les cartes et le bulletin de la période pour ne montrer que les villes sélectionnées
+        buildCards(getVisibleResults());
+        buildPeriodBulletin(getVisibleResults());
       }
 
       chart.update();
@@ -1020,6 +1029,7 @@ async function loadAndRender(){
     }));
 
     statusEl.style.display = "none";
+    lastResults = results;
 
     const WEEKDAYS_SHORT = ["dim","lun","mar","mer","jeu","ven","sam"];
     const dayShortLabels = ["Auj.", "Dem.", "Aprèsdem."];
@@ -1170,8 +1180,8 @@ async function loadAndRender(){
     });
 
     buildLegend();
-    buildCards(results);
-    buildPeriodBulletin(results);
+    buildCards(getVisibleResults());
+    buildPeriodBulletin(getVisibleResults());
 
     const now = new Date();
     const dateStr = now.toLocaleDateString("fr-FR", { day:"numeric", month:"long" });
