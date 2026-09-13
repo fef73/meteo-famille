@@ -88,6 +88,7 @@
     display:inline-flex; background:var(--bg-card); border:1px solid var(--hairline);
     border-radius:999px; padding:3px; gap:2px; align-self:flex-end;
   }
+  .switches-row{display:flex; gap:8px; justify-content:flex-end;}
   .lang-switch button{
     font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600;
     background:transparent; color:var(--text-lo); border:none; border-radius:999px;
@@ -284,9 +285,15 @@
       </div>
     </div>
     <div class="meta">
-      <div class="lang-switch" id="lang-switch">
-        <button class="lang-option" data-lang="fr">FR</button>
-        <button class="lang-option" data-lang="en">EN</button>
+      <div class="switches-row">
+        <div class="lang-switch" id="lang-switch">
+          <button class="lang-option" data-lang="fr">FR</button>
+          <button class="lang-option" data-lang="en">EN</button>
+        </div>
+        <div class="lang-switch" id="unit-switch">
+          <button class="lang-option" data-unit="C">°C</button>
+          <button class="lang-option" data-unit="F">°F</button>
+        </div>
       </div>
       <div id="updated-at">chargement…</div>
       <div class="meta-buttons">
@@ -357,20 +364,20 @@ const TRANSLATIONS = {
     loading: "chargement…", share: "📤 Partager", refresh: "↻ Actualiser", linkCopied: "✓ Lien copié",
     fetching: "Récupération des données Open-Meteo…",
     fetchError: "Impossible de charger les données ({msg})",
-    seuilCanicule: "Seuil canicule (35°C)", seuilGel: "Seuil de gel (0°C)",
+    seuilCanicule: "Seuil canicule ({v}{u})", seuilGel: "Seuil de gel ({v}{u})",
     footerSource: "Source des températures : Open-Meteo.com (prévisions horaires, sans clé API) · Fuseau horaire local à chaque ville",
     footerRefresh: "Rafraîchissement automatique toutes les 15 minutes",
     footerStats: "Statistiques « extrêmes sur 365 jours » : archives Open-Meteo (météo et qualité de l'air), calculées une fois au chargement de la page",
-    tempLabelTomorrowNoon: "°C demain à midi", tempLabelAfterTomorrowNoon: "°C après-demain à midi", tempLabelNow: "°C actuellement",
+    tempLabelTomorrowNoon: "{u} demain à midi", tempLabelAfterTomorrowNoon: "{u} après-demain à midi", tempLabelNow: "{u} actuellement",
     humidity: "💧 humidité", wind: "💨 vent", minLabel: "min", maxLabel: "max",
     aqiAvgLabel: "🌫️ AQI moyen (7j)",
     aqiAvgTitle: "Moyenne des indices de qualité de l'air (AQI) maximaux quotidiens, sur les 7 derniers jours complets.",
     extremesHeader: "Extrêmes sur 365 jours",
-    extremesInfoTitle: "Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint {c}°C ou plus (canicule) ; la température minimale est descendue à {g}°C ou moins (gel) ; la rafale de vent maximale a atteint {v} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint {a} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.",
-    caniculeLabel: "🔥 canicule (≥{c}°C)",
-    caniculeTitle: "Jours où la température maximale a atteint {c}°C ou plus, sur les 365 derniers jours.",
-    gelLabel: "❄️ gel (≤{g}°C)",
-    gelTitle: "Jours où la température minimale est descendue à {g}°C ou moins, sur les 365 derniers jours.",
+    extremesInfoTitle: "Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint {c}{u} ou plus (canicule) ; la température minimale est descendue à {g}{u} ou moins (gel) ; la rafale de vent maximale a atteint {v} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint {a} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.",
+    caniculeLabel: "🔥 canicule (≥{c}{u})",
+    caniculeTitle: "Jours où la température maximale a atteint {c}{u} ou plus, sur les 365 derniers jours.",
+    gelLabel: "❄️ gel (≤{g}{u})",
+    gelTitle: "Jours où la température minimale est descendue à {g}{u} ou moins, sur les 365 derniers jours.",
     ventLabel: "💨 vent rafales ≥{v} km/h",
     ventTitle: "Jours où la rafale de vent maximale a atteint {v} km/h ou plus, sur les 365 derniers jours.",
     pollutionLabel: "🌫️ pollution (AQI ≥{a})",
@@ -381,14 +388,14 @@ const TRANSLATIONS = {
     aqiHistoryTitle: "🌫️ historique pollution — 7 derniers jours (AQI ≥{a})",
     periodToday: "aujourd'hui", periodTomorrow: "demain", periodAfterTomorrow: "après-demain",
     periodThreeDays: "sur les 3 prochains jours", periodSevenDays: "sur les 7 prochains jours",
-    periodLead: "{city} tient la tête {period} avec {max}°C",
-    periodColdest: ", tandis que {city} est la plus fraîche avec {min}°C",
-    periodCaniculeAlert: "{city} : pic à {max}°C {period}, seuil canicule ({s}°C) dépassé.",
-    periodGelAlert: "{city} : minimale de {min}°C {period}, risque de gel.",
+    periodLead: "{city} tient la tête {period} avec {max}{u}",
+    periodColdest: ", tandis que {city} est la plus fraîche avec {min}{u}",
+    periodCaniculeAlert: "{city} : pic à {max}{u} {period}, seuil canicule ({s}{u}) dépassé.",
+    periodGelAlert: "{city} : minimale de {min}{u} {period}, risque de gel.",
     yearlySummaryPrefix: "Sur les 365 derniers jours : ",
     yearlySummaryNone: "Sur les 365 derniers jours, aucun épisode extrême marquant n'a été relevé chez la famille.",
-    yearlyCaniculeTop: "{city} a pris le plus chaud, avec {n} jour{s} de canicule (≥{c}°C)",
-    yearlyGelTop: "{city} a le plus gelé, avec {n} jour{s} (≤{g}°C)",
+    yearlyCaniculeTop: "{city} a pris le plus chaud, avec {n} jour{s} de canicule (≥{c}{u})",
+    yearlyGelTop: "{city} a le plus gelé, avec {n} jour{s} (≤{g}{u})",
     yearlyAqiTop: "{city} a respiré le plus mauvais air, avec {n} jour{s} de pollution (AQI ≥{a})",
     yearlyCaniculeAlert: "{city} : {n} jours de canicule sur les 365 derniers jours.",
     yearlyGelAlert: "{city} : {n} jours de gel sur les 365 derniers jours.",
@@ -415,20 +422,20 @@ const TRANSLATIONS = {
     loading: "loading…", share: "📤 Share", refresh: "↻ Refresh", linkCopied: "✓ Link copied",
     fetching: "Fetching Open-Meteo data…",
     fetchError: "Unable to load data ({msg})",
-    seuilCanicule: "Heatwave threshold (35°C)", seuilGel: "Frost threshold (0°C)",
+    seuilCanicule: "Heatwave threshold ({v}{u})", seuilGel: "Frost threshold ({v}{u})",
     footerSource: "Temperature source: Open-Meteo.com (hourly forecasts, no API key) · Local time zone for each city",
     footerRefresh: "Automatic refresh every 15 minutes",
     footerStats: "\"365-day extremes\" statistics: Open-Meteo archives (weather and air quality), computed once on page load",
-    tempLabelTomorrowNoon: "°C tomorrow at noon", tempLabelAfterTomorrowNoon: "°C day after tomorrow at noon", tempLabelNow: "°C currently",
+    tempLabelTomorrowNoon: "{u} tomorrow at noon", tempLabelAfterTomorrowNoon: "{u} day after tomorrow at noon", tempLabelNow: "{u} currently",
     humidity: "💧 humidity", wind: "💨 wind", minLabel: "min", maxLabel: "max",
     aqiAvgLabel: "🌫️ Avg AQI (7d)",
     aqiAvgTitle: "Average of daily maximum air quality indices (AQI), over the last 7 complete days.",
     extremesHeader: "365-day extremes",
-    extremesInfoTitle: "Number of days, over the last 365 days, when: the maximum temperature reached {c}°C or more (heatwave); the minimum temperature dropped to {g}°C or below (frost); the maximum wind gust reached {v} km/h or more (strong wind); the European air quality index reached {a} or more (pollution). Historical Open-Meteo data, measured at this city's exact location.",
-    caniculeLabel: "🔥 heatwave (≥{c}°C)",
-    caniculeTitle: "Days when the maximum temperature reached {c}°C or more, over the last 365 days.",
-    gelLabel: "❄️ frost (≤{g}°C)",
-    gelTitle: "Days when the minimum temperature dropped to {g}°C or below, over the last 365 days.",
+    extremesInfoTitle: "Number of days, over the last 365 days, when: the maximum temperature reached {c}{u} or more (heatwave); the minimum temperature dropped to {g}{u} or below (frost); the maximum wind gust reached {v} km/h or more (strong wind); the European air quality index reached {a} or more (pollution). Historical Open-Meteo data, measured at this city's exact location.",
+    caniculeLabel: "🔥 heatwave (≥{c}{u})",
+    caniculeTitle: "Days when the maximum temperature reached {c}{u} or more, over the last 365 days.",
+    gelLabel: "❄️ frost (≤{g}{u})",
+    gelTitle: "Days when the minimum temperature dropped to {g}{u} or below, over the last 365 days.",
     ventLabel: "💨 wind gusts ≥{v} km/h",
     ventTitle: "Days when the maximum wind gust reached {v} km/h or more, over the last 365 days.",
     pollutionLabel: "🌫️ pollution (AQI ≥{a})",
@@ -439,14 +446,14 @@ const TRANSLATIONS = {
     aqiHistoryTitle: "🌫️ pollution history — last 7 days (AQI ≥{a})",
     periodToday: "today", periodTomorrow: "tomorrow", periodAfterTomorrow: "the day after tomorrow",
     periodThreeDays: "over the next 3 days", periodSevenDays: "over the next 7 days",
-    periodLead: "{city} is in the lead {period} with {max}°C",
-    periodColdest: ", while {city} is the coolest with {min}°C",
-    periodCaniculeAlert: "{city}: peak of {max}°C {period}, heatwave threshold ({s}°C) exceeded.",
-    periodGelAlert: "{city}: minimum of {min}°C {period}, frost risk.",
+    periodLead: "{city} is in the lead {period} with {max}{u}",
+    periodColdest: ", while {city} is the coolest with {min}{u}",
+    periodCaniculeAlert: "{city}: peak of {max}{u} {period}, heatwave threshold ({s}{u}) exceeded.",
+    periodGelAlert: "{city}: minimum of {min}{u} {period}, frost risk.",
     yearlySummaryPrefix: "Over the last 365 days: ",
     yearlySummaryNone: "Over the last 365 days, no notable extreme event was recorded for the family.",
-    yearlyCaniculeTop: "{city} had the hottest spell, with {n} day{s} of heatwave (≥{c}°C)",
-    yearlyGelTop: "{city} froze the most, with {n} day{s} (≤{g}°C)",
+    yearlyCaniculeTop: "{city} had the hottest spell, with {n} day{s} of heatwave (≥{c}{u})",
+    yearlyGelTop: "{city} froze the most, with {n} day{s} (≤{g}{u})",
     yearlyAqiTop: "{city} breathed the worst air, with {n} day{s} of pollution (AQI ≥{a})",
     yearlyCaniculeAlert: "{city}: {n} heatwave days over the last 365 days.",
     yearlyGelAlert: "{city}: {n} frost days over the last 365 days.",
@@ -474,6 +481,25 @@ function setLang(l){
   lang = l;
   localStorage.setItem("lang", l);
   location.reload();
+}
+
+let tempUnit = localStorage.getItem("tempUnit") || "C";
+function convTemp(c){
+  return tempUnit === "F" ? (c * 9 / 5 + 32) : c;
+}
+function unitSuffix(){
+  return tempUnit === "F" ? "°F" : "°C";
+}
+function setTempUnit(u){
+  tempUnit = u;
+  localStorage.setItem("tempUnit", u);
+  location.reload();
+}
+function seuilCaniculeLabel(){
+  return t('seuilCanicule', { v: Math.round(convTemp(35)), u: unitSuffix() });
+}
+function seuilGelLabel(){
+  return t('seuilGel', { v: Math.round(convTemp(0)), u: unitSuffix() });
 }
 
 let chart;
@@ -794,13 +820,13 @@ function buildLegend(){
     </div>
   `).join("");
   const caniculeHtml = `
-    <div class="legend-item" data-legend-label="${t('seuilCanicule')}" style="cursor:pointer;">
-      <span class="swatch" style="background:repeating-linear-gradient(90deg,#e63946,#e63946 6px,transparent 6px,transparent 10px);"></span>${t('seuilCanicule')}
+    <div class="legend-item" data-legend-label="${seuilCaniculeLabel()}" style="cursor:pointer;">
+      <span class="swatch" style="background:repeating-linear-gradient(90deg,#e63946,#e63946 6px,transparent 6px,transparent 10px);"></span>${seuilCaniculeLabel()}
     </div>
   `;
   const gelHtml = `
-    <div class="legend-item" data-legend-label="${t('seuilGel')}" style="cursor:pointer;">
-      <span class="swatch" style="background:repeating-linear-gradient(90deg,#48cae4,#48cae4 6px,transparent 6px,transparent 10px);"></span>${t('seuilGel')}
+    <div class="legend-item" data-legend-label="${seuilGelLabel()}" style="cursor:pointer;">
+      <span class="swatch" style="background:repeating-linear-gradient(90deg,#48cae4,#48cae4 6px,transparent 6px,transparent 10px);"></span>${seuilGelLabel()}
     </div>
   `;
   row.innerHTML = citiesHtml + caniculeHtml + gelHtml;
@@ -881,19 +907,19 @@ function buildPeriodBulletin(results){
   const coldest = stats.reduce((a, b) => b.min < a.min ? b : a);
   const label = periodLabel();
 
-  let summaryText = t('periodLead', { city: cityLabel(hottest.city), period: label, max: hottest.max.toFixed(1) });
+  let summaryText = t('periodLead', { city: cityLabel(hottest.city), period: label, max: convTemp(hottest.max).toFixed(1), u: unitSuffix() });
   if(coldest.city.key !== hottest.city.key){
-    summaryText += t('periodColdest', { city: cityLabel(coldest.city), min: coldest.min.toFixed(1) });
+    summaryText += t('periodColdest', { city: cityLabel(coldest.city), min: convTemp(coldest.min).toFixed(1), u: unitSuffix() });
   }
   summaryText += ".";
 
   const alerts = [];
   stats.forEach(s => {
     if(s.max >= PERIOD_CANICULE_SEUIL){
-      alerts.push({ type: "canicule", icon: "🔥", text: t('periodCaniculeAlert', { city: cityLabel(s.city), max: s.max.toFixed(1), period: label, s: PERIOD_CANICULE_SEUIL }) });
+      alerts.push({ type: "canicule", icon: "🔥", text: t('periodCaniculeAlert', { city: cityLabel(s.city), max: convTemp(s.max).toFixed(1), period: label, s: Math.round(convTemp(PERIOD_CANICULE_SEUIL)), u: unitSuffix() }) });
     }
     if(s.min <= PERIOD_GEL_SEUIL){
-      alerts.push({ type: "gel", icon: "❄️", text: t('periodGelAlert', { city: cityLabel(s.city), min: s.min.toFixed(1), period: label }) });
+      alerts.push({ type: "gel", icon: "❄️", text: t('periodGelAlert', { city: cityLabel(s.city), min: convTemp(s.min).toFixed(1), period: label, u: unitSuffix() }) });
     }
   });
 
@@ -1009,29 +1035,29 @@ function buildCards(results){
     if(viewDay === "tomorrow"){
       idx = r.hours.findIndex(h => h === 12);
       if(idx < 0) idx = Math.floor(r.temps.length/2);
-      tempLabel = t('tempLabelTomorrowNoon');
+      tempLabel = t('tempLabelTomorrowNoon', { u: unitSuffix() });
     } else if(viewDay === "afterTomorrow"){
       idx = r.hours.findIndex(h => h === 12);
       if(idx < 0) idx = Math.floor(r.temps.length/2);
-      tempLabel = t('tempLabelAfterTomorrowNoon');
+      tempLabel = t('tempLabelAfterTomorrowNoon', { u: unitSuffix() });
     } else if(viewDay === "threeDays" || viewDay === "sevenDays"){
       const now = new Date();
       const nowHourIdx = r.hours.findIndex(h => h === now.getHours());
       idx = nowHourIdx >= 0 ? nowHourIdx : Math.floor(r.temps.length/2);
-      tempLabel = t('tempLabelNow');
+      tempLabel = t('tempLabelNow', { u: unitSuffix() });
     } else {
       const now = new Date();
       const nowHourIdx = r.hours.findIndex(h => h === now.getHours());
       idx = nowHourIdx >= 0 ? nowHourIdx : Math.floor(r.temps.length/2);
-      tempLabel = t('tempLabelNow');
+      tempLabel = t('tempLabelNow', { u: unitSuffix() });
     }
-    const currentTemp = r.temps[idx];
+    const currentTemp = convTemp(r.temps[idx]);
     const icon = weatherEmoji(r.weatherCodes ? r.weatherCodes[idx] : null);
     const humidity = r.humidity ? r.humidity[idx] : null;
     const windSpeed = r.windSpeeds ? Math.round(r.windSpeeds[idx]) : null;
     const windDirection = r.windDirections ? degToCompass(r.windDirections[idx]) : null;
-    const min = Math.min(...r.temps).toFixed(1);
-    const max = Math.max(...r.temps).toFixed(1);
+    const min = convTemp(Math.min(...r.temps)).toFixed(1);
+    const max = convTemp(Math.max(...r.temps)).toFixed(1);
     const avatarsHtml = r.city.people.map(p =>
       `<img src="data:image/png;base64,${AVATARS[p.key]}" alt="${p.name}">`
     ).join("");
@@ -1052,8 +1078,8 @@ function buildCards(results){
         <div class="card-humidity">${t('humidity')} <b>${humidity != null ? humidity + "%" : "--"}</b></div>
         <div class="card-wind">${t('wind')} <b>${windSpeed != null ? windSpeed + " km/h" + (windDirection ? " " + windDirection : "") : "--"}</b></div>
         <div class="card-range">
-          <span>${t('minLabel')} <b>${min}°</b></span>
-          <span>${t('maxLabel')} <b>${max}°</b></span>
+          <span>${t('minLabel')} <b>${min}${unitSuffix()}</b></span>
+          <span>${t('maxLabel')} <b>${max}${unitSuffix()}</b></span>
         </div>
         <div class="card-aqi-avg" title="${t('aqiAvgTitle')}">
           <span>${t('aqiAvgLabel')}</span>
@@ -1061,14 +1087,14 @@ function buildCards(results){
         </div>
         <div class="card-yearly-header">
           <span>${t('extremesHeader')}</span>
-          <i class="cy-info" title="${t('extremesInfoTitle', { c: CANICULE_SEUIL_ANNUEL, g: GEL_SEUIL_ANNUEL, v: VENT_SEUIL_ANNUEL, a: AQI_SEUIL_ANNUEL })}">i</i>
+          <i class="cy-info" title="${t('extremesInfoTitle', { c: Math.round(convTemp(CANICULE_SEUIL_ANNUEL)), g: Math.round(convTemp(GEL_SEUIL_ANNUEL)), v: VENT_SEUIL_ANNUEL, a: AQI_SEUIL_ANNUEL, u: unitSuffix() })}">i</i>
         </div>
-        <div class="card-yearly" title="${t('caniculeTitle', { c: CANICULE_SEUIL_ANNUEL })}">
-          <span class="cy-label">${t('caniculeLabel', { c: CANICULE_SEUIL_ANNUEL })}</span>
+        <div class="card-yearly" title="${t('caniculeTitle', { c: Math.round(convTemp(CANICULE_SEUIL_ANNUEL)), u: unitSuffix() })}">
+          <span class="cy-label">${t('caniculeLabel', { c: Math.round(convTemp(CANICULE_SEUIL_ANNUEL)), u: unitSuffix() })}</span>
           <b id="yearly-canicule-${r.city.key}">…</b>
         </div>
-        <div class="card-yearly" title="${t('gelTitle', { g: GEL_SEUIL_ANNUEL })}">
-          <span class="cy-label">${t('gelLabel', { g: GEL_SEUIL_ANNUEL })}</span>
+        <div class="card-yearly" title="${t('gelTitle', { g: Math.round(convTemp(GEL_SEUIL_ANNUEL)), u: unitSuffix() })}">
+          <span class="cy-label">${t('gelLabel', { g: Math.round(convTemp(GEL_SEUIL_ANNUEL)), u: unitSuffix() })}</span>
           <b id="yearly-gel-${r.city.key}">…</b>
         </div>
         <div class="card-yearly" title="${t('ventTitle', { v: VENT_SEUIL_ANNUEL })}">
@@ -1170,10 +1196,10 @@ function buildBulletin(results){
 
   const summaryParts = [];
   if(topCanicule && topCanicule.canicule > 0){
-    summaryParts.push(t('yearlyCaniculeTop', { city: cityLabel(topCanicule.city), n: topCanicule.canicule, s: topCanicule.canicule > 1 ? "s" : "", c: CANICULE_SEUIL_ANNUEL }));
+    summaryParts.push(t('yearlyCaniculeTop', { city: cityLabel(topCanicule.city), n: topCanicule.canicule, s: topCanicule.canicule > 1 ? "s" : "", c: Math.round(convTemp(CANICULE_SEUIL_ANNUEL)), u: unitSuffix() }));
   }
   if(topGel && topGel.gel > 0){
-    summaryParts.push(t('yearlyGelTop', { city: cityLabel(topGel.city), n: topGel.gel, s: topGel.gel > 1 ? "s" : "", g: GEL_SEUIL_ANNUEL }));
+    summaryParts.push(t('yearlyGelTop', { city: cityLabel(topGel.city), n: topGel.gel, s: topGel.gel > 1 ? "s" : "", g: Math.round(convTemp(GEL_SEUIL_ANNUEL)), u: unitSuffix() }));
   }
   if(topAqi && topAqi.aqiJours > 0){
     summaryParts.push(t('yearlyAqiTop', { city: cityLabel(topAqi.city), n: topAqi.aqiJours, s: topAqi.aqiJours > 1 ? "s" : "", a: AQI_SEUIL_ANNUEL }));
@@ -1243,7 +1269,7 @@ async function loadAndRender(){
       const isLyon = r.city.key === "lyon";
       const dsBase = {
         label: r.city.name,
-        data: r.temps,
+        data: r.temps.map(v => convTemp(v)),
         borderColor: r.city.color,
         backgroundColor: r.city.color,
         borderWidth: 2.75,
@@ -1259,8 +1285,8 @@ async function loadAndRender(){
     // ligne de seuil "canicule" — visible en pointillés rouges sur toute la largeur du graphique
     const CANICULE_SEUIL = 35;
     datasets.push({
-      label: t('seuilCanicule'),
-      data: labels.map(() => CANICULE_SEUIL),
+      label: seuilCaniculeLabel(),
+      data: labels.map(() => convTemp(CANICULE_SEUIL)),
       borderColor: "#e63946",
       backgroundColor: "#e63946",
       borderWidth: 2,
@@ -1275,8 +1301,8 @@ async function loadAndRender(){
     // ligne de seuil "gel" — visible en pointillés bleus sur toute la largeur du graphique
     const GEL_SEUIL = 0;
     datasets.push({
-      label: t('seuilGel'),
-      data: labels.map(() => GEL_SEUIL),
+      label: seuilGelLabel(),
+      data: labels.map(() => convTemp(GEL_SEUIL)),
       borderColor: "#48cae4",
       backgroundColor: "#48cae4",
       borderWidth: 2,
@@ -1302,7 +1328,7 @@ async function loadAndRender(){
         if(r.city.key === "marseille") dy = -40;
         datasets.push({
           label: p.name + " (marker)",
-          data: r.temps,
+          data: r.temps.map(v => convTemp(v)),
           borderWidth: 0,
           pointRadius: 0,
           hoverRadius: 0,
@@ -1331,7 +1357,7 @@ async function loadAndRender(){
         plugins: {
           legend: { display: false },
           tooltip: {
-            filter: (item) => !item.dataset.avatarPoint && item.dataset.label !== t('seuilCanicule') && item.dataset.label !== t('seuilGel'),
+            filter: (item) => !item.dataset.avatarPoint && item.dataset.label !== seuilCaniculeLabel() && item.dataset.label !== seuilGelLabel(),
             backgroundColor: "#132539",
             borderColor: "#22384f",
             borderWidth: 1,
@@ -1355,7 +1381,7 @@ async function loadAndRender(){
               label: (item) => {
                 const r = results[item.datasetIndex];
                 const code = r && r.weatherCodes ? r.weatherCodes[item.dataIndex] : null;
-                return ` ${weatherEmoji(code)} ${truncateName(item.dataset.label, 10)}: ${item.formattedValue}°C`;
+                return ` ${weatherEmoji(code)} ${truncateName(item.dataset.label, 10)}: ${item.formattedValue}${unitSuffix()}`;
               }
             }
           },
@@ -1367,7 +1393,7 @@ async function loadAndRender(){
           },
           y: {
             grid: { color: "#1a2c40" },
-            ticks: { color: "#8fa4b8", font: { family:"IBM Plex Mono", size: 11 }, callback: v => v + "°" },
+            ticks: { color: "#8fa4b8", font: { family:"IBM Plex Mono", size: 11 }, callback: v => v + unitSuffix() },
           },
         },
       },
@@ -1470,8 +1496,11 @@ function applyStaticTranslations(){
   document.getElementById("footer-stats").textContent = t('footerStats');
   document.getElementById("hint-text").textContent = t('hintLegendClick');
   document.getElementById("footer-signature-text").textContent = t('footerSignature');
-  document.querySelectorAll('.lang-option').forEach(btn => {
+  document.querySelectorAll('#lang-switch .lang-option').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
+  document.querySelectorAll('#unit-switch .lang-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.unit === tempUnit);
   });
 }
 applyStaticTranslations();
@@ -1479,6 +1508,11 @@ document.getElementById("lang-switch").addEventListener("click", (evt) => {
   const btn = evt.target.closest(".lang-option");
   if(!btn || btn.dataset.lang === lang) return;
   setLang(btn.dataset.lang);
+});
+document.getElementById("unit-switch").addEventListener("click", (evt) => {
+  const btn = evt.target.closest(".lang-option");
+  if(!btn || btn.dataset.unit === tempUnit) return;
+  setTempUnit(btn.dataset.unit);
 });
 
 document.querySelectorAll(".day-toggle-btn").forEach(btn => {
