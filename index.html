@@ -497,14 +497,18 @@ function moonPhase(dateStr){
   return { emoji: MOON_ICONS[index], label: MOON_LABELS[index] };
 }
 
-// Formate un horodatage ISO ("2026-08-28T09:00") en date lisible pour le titre du tooltip,
-// ex : "ven. 28 août · 09:00"
+// Formate un horodatage ISO ("2026-08-28T09:00") en date lisible pour le titre du tooltip.
+// Sur petits écrans (smartphone), on raccourcit le format pour éviter le débordement horizontal
+// du tooltip Chart.js (ex : "28/08 · 09:00" au lieu de "ven. 28 août · 09:00").
 function formatTooltipDateTime(iso){
   if(!iso) return "";
   const [datePart, timePart] = iso.split("T");
   const [y, m, d] = datePart.split("-").map(Number);
   const date = new Date(y, m - 1, d);
-  const dateStr = date.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "long" });
+  const isCompact = window.innerWidth < 480;
+  const dateStr = isCompact
+    ? date.toLocaleDateString(t('locale'), { day: "numeric", month: "numeric" })
+    : date.toLocaleDateString(t('locale'), { weekday: "short", day: "numeric", month: "long" });
   return `${dateStr} · ${timePart.slice(0, 5)}`;
 }
 
@@ -1282,7 +1286,9 @@ async function loadAndRender(){
                 const iso = results[0].timestamps[items[0].dataIndex];
                 if(!iso) return "";
                 const base = `${moonPhase(iso.slice(0,10)).emoji} ${formatTooltipDateTime(iso)}`;
-                return activeAvatarLabel ? `${activeAvatarLabel} · ${base}` : base;
+                // Sur deux lignes distinctes (plutôt que concaténées) pour éviter tout débordement
+                // horizontal du tooltip sur smartphone.
+                return activeAvatarLabel ? [activeAvatarLabel, base] : [base];
               },
               afterTitle: (items) => {
                 if(!items.length) return "";
