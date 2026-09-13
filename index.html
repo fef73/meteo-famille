@@ -686,6 +686,20 @@ function findAvatarHitbox(chartInstance, xPx, yPx){
   return null;
 }
 
+// Construit la liste des éléments actifs pour un index donné, en ne gardant que les vraies
+// courbes de villes visibles (on exclut les datasets "marker" d'avatars et les seuils),
+// afin que le tooltip déclenché par un clic sur un avatar affiche exactement les mêmes
+// villes que le tooltip déclenché par un survol classique de la courbe (mode "index").
+function getActiveElementsAtIndex(chartInstance, index){
+  const elements = [];
+  chartInstance.data.datasets.forEach((ds, i) => {
+    if(ds.avatarPoint || ds.isThreshold) return;
+    if(!chartInstance.isDatasetVisible(i)) return;
+    elements.push({ datasetIndex: i, index });
+  });
+  return elements;
+}
+
 function setupAvatarClickHandler(canvasEl){
   if(canvasEl._avatarHandlersBound) return;
   canvasEl._avatarHandlersBound = true;
@@ -709,11 +723,9 @@ function setupAvatarClickHandler(canvasEl){
     }
 
     activeAvatarLabel = hb.label;
-    chart.setActiveElements([{ datasetIndex: hb.datasetIndex, index: hb.index }]);
-    chart.tooltip.setActiveElements(
-      [{ datasetIndex: hb.datasetIndex, index: hb.index }],
-      { x: hb.pointX, y: hb.pointY }
-    );
+    const elements = getActiveElementsAtIndex(chart, hb.index);
+    chart.setActiveElements(elements);
+    chart.tooltip.setActiveElements(elements, { x: hb.pointX, y: hb.pointY });
     chart.update();
   });
 
