@@ -84,6 +84,19 @@
   .meta button:focus-visible{outline:2px solid var(--live); outline-offset:2px;}
   .meta-buttons{display:flex; gap:8px; margin-top:6px; justify-content:flex-end;}
 
+  .lang-switch{
+    display:inline-flex; background:var(--bg-card); border:1px solid var(--hairline);
+    border-radius:999px; padding:3px; gap:2px; align-self:flex-end;
+  }
+  .lang-switch button{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600;
+    background:transparent; color:var(--text-lo); border:none; border-radius:999px;
+    padding:6px 15px; cursor:pointer; transition:background .15s ease, color .15s ease;
+  }
+  .lang-switch button:hover{color:var(--text-hi);}
+  .lang-switch button.active{background:var(--live); color:#0b1622;}
+  .lang-switch button.active:hover{color:#0b1622;}
+
   .panel{
     background:var(--bg-panel); border:1px solid var(--hairline); border-radius:16px;
     padding:22px 20px 10px;
@@ -271,11 +284,14 @@
       </div>
     </div>
     <div class="meta">
+      <div class="lang-switch" id="lang-switch">
+        <button class="lang-option" data-lang="fr">FR</button>
+        <button class="lang-option" data-lang="en">EN</button>
+      </div>
       <div id="updated-at">chargement…</div>
       <div class="meta-buttons">
         <button id="share-btn" onclick="shareSite()">📤 Partager</button>
         <button id="refresh-btn">↻ Actualiser</button>
-        <button id="lang-btn">EN</button>
       </div>
     </div>
   </header>
@@ -1448,16 +1464,22 @@ function applyStaticTranslations(){
   document.getElementById("updated-at").textContent = t('loading');
   document.getElementById("share-btn").textContent = t('share');
   document.getElementById("refresh-btn").textContent = t('refresh');
-  document.getElementById("lang-btn").textContent = t('langBtn');
   document.getElementById("chart-status").textContent = t('fetching');
   document.getElementById("footer-source").textContent = t('footerSource');
   document.getElementById("footer-refresh").textContent = t('footerRefresh');
   document.getElementById("footer-stats").textContent = t('footerStats');
   document.getElementById("hint-text").textContent = t('hintLegendClick');
   document.getElementById("footer-signature-text").textContent = t('footerSignature');
+  document.querySelectorAll('.lang-option').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.lang === lang);
+  });
 }
 applyStaticTranslations();
-document.getElementById("lang-btn").addEventListener("click", () => setLang(lang === "fr" ? "en" : "fr"));
+document.getElementById("lang-switch").addEventListener("click", (evt) => {
+  const btn = evt.target.closest(".lang-option");
+  if(!btn || btn.dataset.lang === lang) return;
+  setLang(btn.dataset.lang);
+});
 
 document.querySelectorAll(".day-toggle-btn").forEach(btn => {
   btn.addEventListener("click", () => {
