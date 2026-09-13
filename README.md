@@ -4,3 +4,4 @@ Lyon
 Marseille
 Narbonne
 La Toussuire (les Sybelles)
+Clzemont-Ferrand
