@@ -180,7 +180,7 @@
   .aqi-detail-chip{
     font-family:'IBM Plex Mono', monospace; font-size:10px; line-height:1.3; text-align:center;
     color:var(--text-lo); background:rgba(255,255,255,.03); border:1px solid var(--hairline);
-    border-radius:8px; padding:5px 7px; flex:1 1 auto; min-width:54px;
+    border-radius:8px; padding:5px 7px; flex:1 1 auto; min-width:54px; cursor:help;
   }
   .aqi-detail-chip .aqi-detail-label{
     display:block; font-size:10.5px; letter-spacing:.03em; opacity:.95;
@@ -389,6 +389,11 @@ const TRANSLATIONS = {
     aqiAvgTitle: "Moyenne des indices de qualité de l'air (AQI) maximaux quotidiens, sur les 7 derniers jours complets. Cliquez pour le détail par polluant.",
     aqiDetailPm25: "PM2.5", aqiDetailPm10: "PM10", aqiDetailO3: "Ozone", aqiDetailNo2: "NO₂", aqiDetailSo2: "SO₂",
     aqiDetailUnit: "µg/m³", aqiDetailError: "détail indisponible",
+    aqiDetailPm25Title: "Particules fines PM2.5 — diamètre ≤ 2,5 µm, pénètrent profondément dans les poumons",
+    aqiDetailPm10Title: "Particules PM10 — diamètre ≤ 10 µm, poussières et pollens",
+    aqiDetailO3Title: "Ozone troposphérique (O₃) — irritant respiratoire formé par réaction photochimique",
+    aqiDetailNo2Title: "Dioxyde d'azote (NO₂) — polluant lié au trafic routier",
+    aqiDetailSo2Title: "Dioxyde de soufre (SO₂) — issu de la combustion de combustibles fossiles",
     extremesHeader: "Extrêmes sur 365 jours",
     extremesInfoTitle: "Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint {c}{u} ou plus (canicule) ; la température minimale est descendue à {g}{u} ou moins (gel) ; la rafale de vent maximale a atteint {v} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint {a} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.",
     caniculeLabel: "🔥 canicule (≥{c}{u})",
@@ -449,6 +454,11 @@ const TRANSLATIONS = {
     aqiAvgTitle: "Average of daily maximum air quality indices (AQI), over the last 7 complete days. Click for per-pollutant detail.",
     aqiDetailPm25: "PM2.5", aqiDetailPm10: "PM10", aqiDetailO3: "Ozone", aqiDetailNo2: "NO₂", aqiDetailSo2: "SO₂",
     aqiDetailUnit: "µg/m³", aqiDetailError: "detail unavailable",
+    aqiDetailPm25Title: "Fine particles PM2.5 — diameter ≤ 2.5 µm, penetrate deep into the lungs",
+    aqiDetailPm10Title: "Particles PM10 — diameter ≤ 10 µm, dust and pollen",
+    aqiDetailO3Title: "Ground-level ozone (O₃) — respiratory irritant formed by photochemical reaction",
+    aqiDetailNo2Title: "Nitrogen dioxide (NO₂) — pollutant linked to road traffic",
+    aqiDetailSo2Title: "Sulphur dioxide (SO₂) — from burning fossil fuels",
     extremesHeader: "365-day extremes",
     extremesInfoTitle: "Number of days, over the last 365 days, when: the maximum temperature reached {c}{u} or more (heatwave); the minimum temperature dropped to {g}{u} or below (frost); the maximum wind gust reached {v} km/h or more (strong wind); the European air quality index reached {a} or more (pollution). Historical Open-Meteo data, measured at this city's exact location.",
     caniculeLabel: "🔥 heatwave (≥{c}{u})",
@@ -1066,11 +1076,11 @@ function toggleAqiDetail(cityKey){
   getCurrentAirQuality(city).then(stats => {
     panel.dataset.loaded = "1";
     panel.innerHTML = `
-      <span class="aqi-detail-chip"><span class="aqi-detail-label">${t('aqiDetailPm25')}</span><b>${fmtPollutant(stats.pm25)}</b></span>
-      <span class="aqi-detail-chip"><span class="aqi-detail-label">${t('aqiDetailPm10')}</span><b>${fmtPollutant(stats.pm10)}</b></span>
-      <span class="aqi-detail-chip"><span class="aqi-detail-label">${t('aqiDetailO3')}</span><b>${fmtPollutant(stats.o3)}</b></span>
-      <span class="aqi-detail-chip"><span class="aqi-detail-label">${t('aqiDetailNo2')}</span><b>${fmtPollutant(stats.no2)}</b></span>
-      <span class="aqi-detail-chip"><span class="aqi-detail-label">${t('aqiDetailSo2')}</span><b>${fmtPollutant(stats.so2)}</b></span>
+      <span class="aqi-detail-chip" title="${t('aqiDetailPm25Title')}"><span class="aqi-detail-label">${t('aqiDetailPm25')}</span><b>${fmtPollutant(stats.pm25)}</b></span>
+      <span class="aqi-detail-chip" title="${t('aqiDetailPm10Title')}"><span class="aqi-detail-label">${t('aqiDetailPm10')}</span><b>${fmtPollutant(stats.pm10)}</b></span>
+      <span class="aqi-detail-chip" title="${t('aqiDetailO3Title')}"><span class="aqi-detail-label">${t('aqiDetailO3')}</span><b>${fmtPollutant(stats.o3)}</b></span>
+      <span class="aqi-detail-chip" title="${t('aqiDetailNo2Title')}"><span class="aqi-detail-label">${t('aqiDetailNo2')}</span><b>${fmtPollutant(stats.no2)}</b></span>
+      <span class="aqi-detail-chip" title="${t('aqiDetailSo2Title')}"><span class="aqi-detail-label">${t('aqiDetailSo2')}</span><b>${fmtPollutant(stats.so2)}</b></span>
     `;
   }).catch(() => {
     panel.innerHTML = `<span class="aqi-detail-chip">${t('aqiDetailError')}</span>`;
