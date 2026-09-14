@@ -268,6 +268,31 @@
     color:#e8ecef; background:rgba(143,164,184,.18); border-color:rgba(143,164,184,.55); font-weight:600;
   }
 
+  .features-panel{ margin-top:22px; }
+  .features-panel details{
+    background:var(--bg-panel); border:1px solid var(--hairline); border-radius:16px;
+    padding:4px 22px;
+  }
+  .features-panel summary{
+    cursor:pointer; padding:15px 0; font-family:'Space Grotesk', sans-serif; font-size:15px; font-weight:500;
+    color:var(--text-hi); list-style:none; display:flex; align-items:center; gap:9px; user-select:none;
+  }
+  .features-panel summary::-webkit-details-marker{display:none;}
+  .features-panel summary::before{
+    content:"▸"; color:var(--live); font-size:13px; transition:transform .15s ease; display:inline-block;
+  }
+  .features-panel details[open] summary::before{transform:rotate(90deg);}
+  .features-panel .features-body{padding:2px 0 20px;}
+  .features-panel h3{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--live); margin:18px 0 8px;
+  }
+  .features-panel h3:first-child{margin-top:4px;}
+  .features-panel ul{margin:0; padding-left:20px; font-size:13.5px; line-height:1.7; color:var(--text-hi);}
+  .features-panel li{margin-bottom:4px;}
+  .features-panel li b{color:var(--text-hi); font-weight:600;}
+  .features-panel .f-dim{color:var(--text-lo);}
+
   footer{
     margin-top:30px; font-family:'IBM Plex Mono', monospace; font-size:11px;
     color:var(--text-lo); text-align:center; line-height:1.7;
@@ -341,6 +366,8 @@
   <div class="bulletin" id="bulletin-period"></div>
 
   <div class="bulletin" id="bulletin"></div>
+
+  <div class="features-panel" id="features-panel"></div>
 
   <footer>
     <span id="footer-source">Source des températures : Open-Meteo.com (prévisions horaires, sans clé API) · Fuseau horaire local à chaque ville</span><br>
@@ -1650,7 +1677,94 @@ function updateSubtitle(){
   }
 }
 
+// ---------- Panneau "Fonctionnalités du site" ----------
+const FEATURES_CONTENT = {
+  fr: `
+    <details>
+      <summary>ℹ️ Fonctionnalités du site</summary>
+      <div class="features-body">
+        <h3>👨‍👩‍👧‍👦 Famille</h3>
+        <ul>
+          <li>Suivi de plusieurs membres de la famille, chacun associé à sa ville et à son avatar (photo)</li>
+          <li>Clic sur un avatar dans le graphique ou la légende pour afficher son détail (tooltip dédié)</li>
+        </ul>
+        <h3>📊 Graphique de comparaison</h3>
+        <ul>
+          <li>5 périodes : aujourd'hui, demain, après-demain, 3 jours, 7 jours</li>
+          <li>Une courbe par personne, plus les seuils canicule et gel</li>
+          <li>Clic sur un nom dans la légende pour masquer/afficher sa courbe</li>
+          <li>Phase de lune affichée dans le tooltip du graphique</li>
+        </ul>
+        <h3>🗂️ Cartes par personne</h3>
+        <ul>
+          <li>Température actuelle (ou à midi pour demain/après-demain), icône météo, heure locale en direct</li>
+          <li>Humidité, vent (vitesse + direction), heure du soleil au zénith, min/max de la période</li>
+          <li><b>AQI moyen (7j)</b> cliquable, en rouge si &gt;60, avec détail par polluant (PM2.5, PM10, Ozone, NO₂, SO₂ — rouge si seuil santé OMS dépassé) et par pollen (bouleau, graminées, olivier, ambroisie, aulne, armoise — rouge si risque allergique)</li>
+          <li>Extrêmes sur 365 jours : nb de jours de canicule, gel, vent fort, pollution</li>
+        </ul>
+        <h3>📅 Bulletins</h3>
+        <ul>
+          <li>Bulletin de la période : qui a le plus chaud / le plus froid en ce moment, avec alertes canicule/gel</li>
+          <li>Bulletin annuel : qui bat le record de jours de canicule, gel ou pollution sur les 365 derniers jours parmi la famille, avec alertes</li>
+          <li>Historique pollution des 7 derniers jours par personne</li>
+        </ul>
+        <h3>⚙️ Confort d'usage</h3>
+        <ul>
+          <li>FR/EN, °C/°F, bouton de partage</li>
+          <li class="f-dim">Rafraîchissement automatique des données</li>
+        </ul>
+      </div>
+    </details>
+  `,
+  en: `
+    <details>
+      <summary>ℹ️ Site features</summary>
+      <div class="features-body">
+        <h3>👨‍👩‍👧‍👦 Family</h3>
+        <ul>
+          <li>Tracks several family members, each linked to their city and their avatar (photo)</li>
+          <li>Click an avatar on the chart or legend to see their detail (dedicated tooltip)</li>
+        </ul>
+        <h3>📊 Comparison chart</h3>
+        <ul>
+          <li>5 periods: today, tomorrow, day after tomorrow, 3 days, 7 days</li>
+          <li>One line per person, plus the heatwave and frost thresholds</li>
+          <li>Click a name in the legend to show/hide their line</li>
+          <li>Moon phase shown in the chart tooltip</li>
+        </ul>
+        <h3>🗂️ Per-person cards</h3>
+        <ul>
+          <li>Current temperature (or noon for tomorrow/day after), weather icon, live local time</li>
+          <li>Humidity, wind (speed + direction), solar noon, period min/max</li>
+          <li>Clickable <b>Avg AQI (7d)</b>, red if &gt;60, with per-pollutant detail (PM2.5, PM10, Ozone, NO₂, SO₂ — red past the WHO health guideline) and per-pollen detail (birch, grass, olive, ragweed, alder, mugwort — red past the allergy-risk marker)</li>
+          <li>365-day extremes: number of heatwave, frost, strong wind and pollution days</li>
+        </ul>
+        <h3>📅 Bulletins</h3>
+        <ul>
+          <li>Period bulletin: who's hottest / coolest right now, with heatwave/frost alerts</li>
+          <li>Yearly bulletin: who holds the family record for heatwave, frost or pollution days over the last 365 days, with alerts</li>
+          <li>7-day pollution history per person</li>
+        </ul>
+        <h3>⚙️ Convenience</h3>
+        <ul>
+          <li>FR/EN, °C/°F, share button</li>
+          <li class="f-dim">Automatic data refresh</li>
+        </ul>
+      </div>
+    </details>
+  `,
+};
+
+function renderFeatures(){
+  const el = document.getElementById("features-panel");
+  if(!el) return;
+  const wasOpen = el.querySelector("details") ? el.querySelector("details").open : false;
+  el.innerHTML = FEATURES_CONTENT[lang] || FEATURES_CONTENT.fr;
+  if(wasOpen) el.querySelector("details").open = true;
+}
+
 function applyStaticTranslations(){
+  renderFeatures();
   document.documentElement.lang = lang;
   document.getElementById("eyebrow-text").textContent = t('eyebrow');
   document.getElementById("main-title").textContent = t('title');
