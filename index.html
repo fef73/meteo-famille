@@ -168,9 +168,21 @@
   .card-range b{color:var(--text-hi); font-weight:500;}
   .card-aqi-avg{
     display:flex; justify-content:space-between; align-items:center; font-family:'IBM Plex Mono', monospace;
-    font-size:11.5px; color:var(--text-lo); margin-top:8px; cursor:help;
+    font-size:11.5px; color:var(--text-lo); margin-top:8px; cursor:pointer;
   }
   .card-aqi-avg b{color:var(--text-hi); font-weight:500;}
+  .card-aqi-avg .aqi-caret{opacity:.6; font-size:9px; margin-left:6px;}
+  .aqi-detail-panel{
+    display:none; flex-wrap:wrap; gap:6px; margin-top:8px; padding-top:8px;
+    border-top:1px dashed var(--hairline);
+  }
+  .aqi-detail-panel.open{display:flex;}
+  .aqi-detail-chip{
+    font-family:'IBM Plex Mono', monospace; font-size:10px; line-height:1.3; text-align:center;
+    color:var(--text-lo); background:rgba(255,255,255,.03); border:1px solid var(--hairline);
+    border-radius:8px; padding:4px 7px; flex:1 1 auto; min-width:54px;
+  }
+  .aqi-detail-chip b{display:block; color:var(--text-hi); font-size:12px; font-weight:500; margin-top:1px;}
   .card-yearly{
     display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace;
     font-size:11.5px; color:var(--text-lo); border-top:1px solid var(--hairline);
@@ -371,7 +383,9 @@ const TRANSLATIONS = {
     tempLabelTomorrowNoon: "{u} demain à midi", tempLabelAfterTomorrowNoon: "{u} après-demain à midi", tempLabelNow: "{u} actuellement",
     humidity: "💧 humidité", wind: "💨 vent", minLabel: "min", maxLabel: "max",
     aqiAvgLabel: "🌫️ AQI moyen (7j)",
-    aqiAvgTitle: "Moyenne des indices de qualité de l'air (AQI) maximaux quotidiens, sur les 7 derniers jours complets.",
+    aqiAvgTitle: "Moyenne des indices de qualité de l'air (AQI) maximaux quotidiens, sur les 7 derniers jours complets. Cliquez pour le détail par polluant.",
+    aqiDetailPm25: "PM2.5", aqiDetailPm10: "PM10", aqiDetailO3: "Ozone", aqiDetailNo2: "NO₂", aqiDetailSo2: "SO₂",
+    aqiDetailUnit: "µg/m³", aqiDetailError: "détail indisponible",
     extremesHeader: "Extrêmes sur 365 jours",
     extremesInfoTitle: "Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint {c}{u} ou plus (canicule) ; la température minimale est descendue à {g}{u} ou moins (gel) ; la rafale de vent maximale a atteint {v} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint {a} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.",
     caniculeLabel: "🔥 canicule (≥{c}{u})",
@@ -405,7 +419,7 @@ const TRANSLATIONS = {
     shareText: "Regarde les températures là où vivent Audrey, Marine, Benjamin, Fernand, Valentin et Loulou :",
     promptCopy: "Copie ce lien :",
     hintLegendClick: "Vous pouvez choisir ce que vous voyez en cliquant ci-dessus sur les noms de villes ou les seuils",
-    footerSignature: "Créé par fef73 avec claude.ai · 13 septembre 2026, 06:11",
+    footerSignature: "Créé par fef73 avec claude.ai · 14 septembre 2026",
     langBtn: "EN",
     locale: "fr-FR",
   },
@@ -429,7 +443,9 @@ const TRANSLATIONS = {
     tempLabelTomorrowNoon: "{u} tomorrow at noon", tempLabelAfterTomorrowNoon: "{u} day after tomorrow at noon", tempLabelNow: "{u} currently",
     humidity: "💧 humidity", wind: "💨 wind", minLabel: "min", maxLabel: "max",
     aqiAvgLabel: "🌫️ Avg AQI (7d)",
-    aqiAvgTitle: "Average of daily maximum air quality indices (AQI), over the last 7 complete days.",
+    aqiAvgTitle: "Average of daily maximum air quality indices (AQI), over the last 7 complete days. Click for per-pollutant detail.",
+    aqiDetailPm25: "PM2.5", aqiDetailPm10: "PM10", aqiDetailO3: "Ozone", aqiDetailNo2: "NO₂", aqiDetailSo2: "SO₂",
+    aqiDetailUnit: "µg/m³", aqiDetailError: "detail unavailable",
     extremesHeader: "365-day extremes",
     extremesInfoTitle: "Number of days, over the last 365 days, when: the maximum temperature reached {c}{u} or more (heatwave); the minimum temperature dropped to {g}{u} or below (frost); the maximum wind gust reached {v} km/h or more (strong wind); the European air quality index reached {a} or more (pollution). Historical Open-Meteo data, measured at this city's exact location.",
     caniculeLabel: "🔥 heatwave (≥{c}{u})",
@@ -463,7 +479,7 @@ const TRANSLATIONS = {
     shareText: "Check the temperatures where Audrey, Marine, Benjamin, Fernand, Valentin and Loulou live:",
     promptCopy: "Copy this link:",
     hintLegendClick: "You can choose what you see by clicking above on the city names or the thresholds",
-    footerSignature: "Made by fef73 with claude.ai · Sep 13, 2026, 06:11",
+    footerSignature: "Made by fef73 with claude.ai · Sep 14, 2026",
     langBtn: "FR",
     locale: "en-GB",
   },
@@ -986,6 +1002,78 @@ function getRecentAqiHistory(city){
   return promise;
 }
 
+// Détail par polluant (valeurs "actuelles") pour une ville — avec cache
+const aqiDetailCache = {};
+function getCurrentAirQuality(city){
+  if(aqiDetailCache[city.key]) return Promise.resolve(aqiDetailCache[city.key]);
+
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}` +
+    `&current=european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide&timezone=auto`;
+
+  const promise = fetch(url)
+    .then(res => {
+      if(!res.ok) throw new Error("Erreur API qualité de l'air (détail) pour " + city.name);
+      return res.json();
+    })
+    .then(data => {
+      const c = data.current || {};
+      const stats = {
+        aqi: c.european_aqi ?? null,
+        pm25: c.pm2_5 ?? null,
+        pm10: c.pm10 ?? null,
+        o3: c.ozone ?? null,
+        no2: c.nitrogen_dioxide ?? null,
+        so2: c.sulphur_dioxide ?? null,
+      };
+      aqiDetailCache[city.key] = stats;
+      return stats;
+    })
+    .catch(err => {
+      delete aqiDetailCache[city.key];
+      throw err;
+    });
+
+  aqiDetailCache[city.key] = promise;
+  return promise;
+}
+
+function fmtPollutant(v){
+  return v == null ? "--" : Math.round(v * 10) / 10;
+}
+
+function toggleAqiDetail(cityKey){
+  const city = CITIES.find(c => c.key === cityKey);
+  if(!city) return;
+  const panel = document.getElementById("aqi-detail-" + city.key);
+  const caret = document.getElementById("aqi-caret-" + city.key);
+  if(!panel) return;
+
+  const willOpen = !panel.classList.contains("open");
+  if(!willOpen){
+    panel.classList.remove("open");
+    if(caret) caret.textContent = "▾";
+    return;
+  }
+
+  panel.classList.add("open");
+  if(caret) caret.textContent = "▴";
+  if(panel.dataset.loaded === "1") return;
+
+  panel.innerHTML = `<span class="aqi-detail-chip">…</span>`;
+  getCurrentAirQuality(city).then(stats => {
+    panel.dataset.loaded = "1";
+    panel.innerHTML = `
+      <span class="aqi-detail-chip">${t('aqiDetailPm25')}<b>${fmtPollutant(stats.pm25)}</b></span>
+      <span class="aqi-detail-chip">${t('aqiDetailPm10')}<b>${fmtPollutant(stats.pm10)}</b></span>
+      <span class="aqi-detail-chip">${t('aqiDetailO3')}<b>${fmtPollutant(stats.o3)}</b></span>
+      <span class="aqi-detail-chip">${t('aqiDetailNo2')}<b>${fmtPollutant(stats.no2)}</b></span>
+      <span class="aqi-detail-chip">${t('aqiDetailSo2')}<b>${fmtPollutant(stats.so2)}</b></span>
+    `;
+  }).catch(() => {
+    panel.innerHTML = `<span class="aqi-detail-chip">${t('aqiDetailError')}</span>`;
+  });
+}
+
 function dayAbbrev(dateStr){
   const d = new Date(dateStr + "T12:00:00");
   return d.toLocaleDateString(t('locale'), { weekday: "short" }).replace(".", "");
@@ -1081,10 +1169,11 @@ function buildCards(results){
           <span>${t('minLabel')} <b>${min}${unitSuffix()}</b></span>
           <span>${t('maxLabel')} <b>${max}${unitSuffix()}</b></span>
         </div>
-        <div class="card-aqi-avg" title="${t('aqiAvgTitle')}">
+        <div class="card-aqi-avg" title="${t('aqiAvgTitle')}" onclick="toggleAqiDetail('${r.city.key}')">
           <span>${t('aqiAvgLabel')}</span>
-          <b id="aqi-avg-${r.city.key}">…</b>
+          <span><b id="aqi-avg-${r.city.key}">…</b><span class="aqi-caret" id="aqi-caret-${r.city.key}">▾</span></span>
         </div>
+        <div class="aqi-detail-panel" id="aqi-detail-${r.city.key}"></div>
         <div class="card-yearly-header">
           <span>${t('extremesHeader')}</span>
           <i class="cy-info" title="${t('extremesInfoTitle', { c: Math.round(convTemp(CANICULE_SEUIL_ANNUEL)), g: Math.round(convTemp(GEL_SEUIL_ANNUEL)), v: VENT_SEUIL_ANNUEL, a: AQI_SEUIL_ANNUEL, u: unitSuffix() })}">i</i>
