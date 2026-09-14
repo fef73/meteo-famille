@@ -187,6 +187,10 @@
   }
   .aqi-detail-chip b{display:block; color:var(--text-hi); font-size:13px; font-weight:600; margin-top:2px;}
   .aqi-detail-chip b.aqi-detail-value-bad{color:#ff6b6b;}
+  .aqi-detail-subheader{
+    flex-basis:100%; font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--text-lo); opacity:.8; margin:4px 0 1px;
+  }
   .card-yearly{
     display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace;
     font-size:11.5px; color:var(--text-lo); border-top:1px solid var(--hairline);
@@ -396,6 +400,16 @@ const TRANSLATIONS = {
     aqiDetailNo2Title: "Dioxyde d'azote (NO₂) — polluant lié au trafic routier",
     aqiDetailSo2Title: "Dioxyde de soufre (SO₂) — issu de la combustion de combustibles fossiles",
     aqiHealthNormNote: "seuil santé OMS (24h) : {v} µg/m³",
+    aqiPollenSectionLabel: "🌿 Pollens (grains/m³)",
+    aqiPollenNote: "repère indicatif de risque allergique : ≥ {v} grains/m³",
+    aqiDetailBirch: "Bouleau", aqiDetailGrass: "Graminées", aqiDetailOlive: "Olivier",
+    aqiDetailRagweed: "Ambroisie", aqiDetailAlder: "Aulne", aqiDetailMugwort: "Armoise",
+    aqiDetailBirchTitle: "Pollen de bouleau — allergène majeur au printemps",
+    aqiDetailGrassTitle: "Pollen de graminées — allergène majeur de fin de printemps à l'été",
+    aqiDetailOliveTitle: "Pollen d'olivier — fréquent dans le sud de la France en été",
+    aqiDetailRagweedTitle: "Pollen d'ambroisie — allergène très sensibilisant, fin d'été",
+    aqiDetailAlderTitle: "Pollen d'aulne — l'un des premiers pollens de l'année, fin d'hiver",
+    aqiDetailMugwortTitle: "Pollen d'armoise — allergène estival",
     extremesHeader: "Extrêmes sur 365 jours",
     extremesInfoTitle: "Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint {c}{u} ou plus (canicule) ; la température minimale est descendue à {g}{u} ou moins (gel) ; la rafale de vent maximale a atteint {v} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint {a} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.",
     caniculeLabel: "🔥 canicule (≥{c}{u})",
@@ -462,6 +476,16 @@ const TRANSLATIONS = {
     aqiDetailNo2Title: "Nitrogen dioxide (NO₂) — pollutant linked to road traffic",
     aqiDetailSo2Title: "Sulphur dioxide (SO₂) — from burning fossil fuels",
     aqiHealthNormNote: "WHO health guideline (24h): {v} µg/m³",
+    aqiPollenSectionLabel: "🌿 Pollen (grains/m³)",
+    aqiPollenNote: "indicative allergy-risk marker: ≥ {v} grains/m³",
+    aqiDetailBirch: "Birch", aqiDetailGrass: "Grass", aqiDetailOlive: "Olive",
+    aqiDetailRagweed: "Ragweed", aqiDetailAlder: "Alder", aqiDetailMugwort: "Mugwort",
+    aqiDetailBirchTitle: "Birch pollen — major allergen in spring",
+    aqiDetailGrassTitle: "Grass pollen — major allergen from late spring to summer",
+    aqiDetailOliveTitle: "Olive pollen — common in southern France in summer",
+    aqiDetailRagweedTitle: "Ragweed pollen — highly sensitizing allergen, late summer",
+    aqiDetailAlderTitle: "Alder pollen — one of the earliest pollens of the year, late winter",
+    aqiDetailMugwortTitle: "Mugwort pollen — summer allergen",
     extremesHeader: "365-day extremes",
     extremesInfoTitle: "Number of days, over the last 365 days, when: the maximum temperature reached {c}{u} or more (heatwave); the minimum temperature dropped to {g}{u} or below (frost); the maximum wind gust reached {v} km/h or more (strong wind); the European air quality index reached {a} or more (pollution). Historical Open-Meteo data, measured at this city's exact location.",
     caniculeLabel: "🔥 heatwave (≥{c}{u})",
@@ -1024,7 +1048,8 @@ function getCurrentAirQuality(city){
   if(aqiDetailCache[city.key]) return Promise.resolve(aqiDetailCache[city.key]);
 
   const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${city.lat}&longitude=${city.lon}` +
-    `&current=european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide&timezone=auto`;
+    `&current=european_aqi,pm2_5,pm10,ozone,nitrogen_dioxide,sulphur_dioxide,` +
+    `alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen&timezone=auto`;
 
   const promise = fetch(url)
     .then(res => {
@@ -1040,6 +1065,12 @@ function getCurrentAirQuality(city){
         o3: c.ozone ?? null,
         no2: c.nitrogen_dioxide ?? null,
         so2: c.sulphur_dioxide ?? null,
+        alder: c.alder_pollen ?? null,
+        birch: c.birch_pollen ?? null,
+        grass: c.grass_pollen ?? null,
+        mugwort: c.mugwort_pollen ?? null,
+        olive: c.olive_pollen ?? null,
+        ragweed: c.ragweed_pollen ?? null,
       };
       aqiDetailCache[city.key] = stats;
       return stats;
@@ -1055,9 +1086,15 @@ function getCurrentAirQuality(city){
 
 // Seuils sanitaires de référence (lignes directrices OMS 2021, moyennes 24h) en µg/m³
 const POLLUTANT_HEALTH_THRESHOLD = { pm25: 15, pm10: 45, o3: 100, no2: 25, so2: 40 };
+// Seuil indicatif de risque allergique (grains/m³) — repère générique, pas une norme officielle par espèce
+const POLLEN_ALERT_THRESHOLD = 50;
 
 function fmtPollutant(v){
   return v == null ? "--" : Math.round(v * 10) / 10;
+}
+
+function fmtPollen(v){
+  return v == null ? "--" : Math.round(v);
 }
 
 function pollutantChip(labelKey, titleKey, value, thresholdKey){
@@ -1065,6 +1102,13 @@ function pollutantChip(labelKey, titleKey, value, thresholdKey){
   const valueClass = over ? " aqi-detail-value-bad" : "";
   const title = `${t(titleKey)} · ${t('aqiHealthNormNote', { v: POLLUTANT_HEALTH_THRESHOLD[thresholdKey] })}`;
   return `<span class="aqi-detail-chip" title="${title}"><span class="aqi-detail-label">${t(labelKey)}</span><b class="${valueClass}">${fmtPollutant(value)}</b></span>`;
+}
+
+function pollenChip(labelKey, titleKey, value){
+  const over = value != null && value >= POLLEN_ALERT_THRESHOLD;
+  const valueClass = over ? " aqi-detail-value-bad" : "";
+  const title = `${t(titleKey)} · ${t('aqiPollenNote', { v: POLLEN_ALERT_THRESHOLD })}`;
+  return `<span class="aqi-detail-chip" title="${title}"><span class="aqi-detail-label">${t(labelKey)}</span><b class="${valueClass}">${fmtPollen(value)}</b></span>`;
 }
 
 function toggleAqiDetail(cityKey){
@@ -1088,13 +1132,26 @@ function toggleAqiDetail(cityKey){
   panel.innerHTML = `<span class="aqi-detail-chip">…</span>`;
   getCurrentAirQuality(city).then(stats => {
     panel.dataset.loaded = "1";
-    panel.innerHTML = [
+    const pollutantsHtml = [
       pollutantChip('aqiDetailPm25', 'aqiDetailPm25Title', stats.pm25, 'pm25'),
       pollutantChip('aqiDetailPm10', 'aqiDetailPm10Title', stats.pm10, 'pm10'),
       pollutantChip('aqiDetailO3', 'aqiDetailO3Title', stats.o3, 'o3'),
       pollutantChip('aqiDetailNo2', 'aqiDetailNo2Title', stats.no2, 'no2'),
       pollutantChip('aqiDetailSo2', 'aqiDetailSo2Title', stats.so2, 'so2'),
     ].join("");
+    const pollenHtml = [
+      pollenChip('aqiDetailBirch', 'aqiDetailBirchTitle', stats.birch),
+      pollenChip('aqiDetailGrass', 'aqiDetailGrassTitle', stats.grass),
+      pollenChip('aqiDetailOlive', 'aqiDetailOliveTitle', stats.olive),
+      pollenChip('aqiDetailRagweed', 'aqiDetailRagweedTitle', stats.ragweed),
+      pollenChip('aqiDetailAlder', 'aqiDetailAlderTitle', stats.alder),
+      pollenChip('aqiDetailMugwort', 'aqiDetailMugwortTitle', stats.mugwort),
+    ].join("");
+    panel.innerHTML = `
+      ${pollutantsHtml}
+      <div class="aqi-detail-subheader">${t('aqiPollenSectionLabel')}</div>
+      ${pollenHtml}
+    `;
   }).catch(() => {
     panel.innerHTML = `<span class="aqi-detail-chip">${t('aqiDetailError')}</span>`;
   });
