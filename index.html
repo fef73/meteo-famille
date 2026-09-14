@@ -186,6 +186,7 @@
     display:block; font-size:10.5px; letter-spacing:.03em; opacity:.95;
   }
   .aqi-detail-chip b{display:block; color:var(--text-hi); font-size:13px; font-weight:600; margin-top:2px;}
+  .aqi-detail-chip b.aqi-detail-value-bad{color:#ff6b6b;}
   .card-yearly{
     display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace;
     font-size:11.5px; color:var(--text-lo); border-top:1px solid var(--hairline);
@@ -394,6 +395,7 @@ const TRANSLATIONS = {
     aqiDetailO3Title: "Ozone troposphérique (O₃) — irritant respiratoire formé par réaction photochimique",
     aqiDetailNo2Title: "Dioxyde d'azote (NO₂) — polluant lié au trafic routier",
     aqiDetailSo2Title: "Dioxyde de soufre (SO₂) — issu de la combustion de combustibles fossiles",
+    aqiHealthNormNote: "seuil santé OMS (24h) : {v} µg/m³",
     extremesHeader: "Extrêmes sur 365 jours",
     extremesInfoTitle: "Nombre de jours, sur les 365 derniers jours, où : la température maximale a atteint {c}{u} ou plus (canicule) ; la température minimale est descendue à {g}{u} ou moins (gel) ; la rafale de vent maximale a atteint {v} km/h ou plus (vent fort) ; l'indice de qualité de l'air européen a atteint {a} ou plus (pollution). Données historiques Open-Meteo, mesurées à l'emplacement exact de cette ville.",
     caniculeLabel: "🔥 canicule (≥{c}{u})",
@@ -459,6 +461,7 @@ const TRANSLATIONS = {
     aqiDetailO3Title: "Ground-level ozone (O₃) — respiratory irritant formed by photochemical reaction",
     aqiDetailNo2Title: "Nitrogen dioxide (NO₂) — pollutant linked to road traffic",
     aqiDetailSo2Title: "Sulphur dioxide (SO₂) — from burning fossil fuels",
+    aqiHealthNormNote: "WHO health guideline (24h): {v} µg/m³",
     extremesHeader: "365-day extremes",
     extremesInfoTitle: "Number of days, over the last 365 days, when: the maximum temperature reached {c}{u} or more (heatwave); the minimum temperature dropped to {g}{u} or below (frost); the maximum wind gust reached {v} km/h or more (strong wind); the European air quality index reached {a} or more (pollution). Historical Open-Meteo data, measured at this city's exact location.",
     caniculeLabel: "🔥 heatwave (≥{c}{u})",
@@ -1050,8 +1053,18 @@ function getCurrentAirQuality(city){
   return promise;
 }
 
+// Seuils sanitaires de référence (lignes directrices OMS 2021, moyennes 24h) en µg/m³
+const POLLUTANT_HEALTH_THRESHOLD = { pm25: 15, pm10: 45, o3: 100, no2: 25, so2: 40 };
+
 function fmtPollutant(v){
   return v == null ? "--" : Math.round(v * 10) / 10;
+}
+
+function pollutantChip(labelKey, titleKey, value, thresholdKey){
+  const over = value != null && value > POLLUTANT_HEALTH_THRESHOLD[thresholdKey];
+  const valueClass = over ? " aqi-detail-value-bad" : "";
+  const title = `${t(titleKey)} · ${t('aqiHealthNormNote', { v: POLLUTANT_HEALTH_THRESHOLD[thresholdKey] })}`;
+  return `<span class="aqi-detail-chip" title="${title}"><span class="aqi-detail-label">${t(labelKey)}</span><b class="${valueClass}">${fmtPollutant(value)}</b></span>`;
 }
 
 function toggleAqiDetail(cityKey){
@@ -1075,13 +1088,13 @@ function toggleAqiDetail(cityKey){
   panel.innerHTML = `<span class="aqi-detail-chip">…</span>`;
   getCurrentAirQuality(city).then(stats => {
     panel.dataset.loaded = "1";
-    panel.innerHTML = `
-      <span class="aqi-detail-chip" title="${t('aqiDetailPm25Title')}"><span class="aqi-detail-label">${t('aqiDetailPm25')}</span><b>${fmtPollutant(stats.pm25)}</b></span>
-      <span class="aqi-detail-chip" title="${t('aqiDetailPm10Title')}"><span class="aqi-detail-label">${t('aqiDetailPm10')}</span><b>${fmtPollutant(stats.pm10)}</b></span>
-      <span class="aqi-detail-chip" title="${t('aqiDetailO3Title')}"><span class="aqi-detail-label">${t('aqiDetailO3')}</span><b>${fmtPollutant(stats.o3)}</b></span>
-      <span class="aqi-detail-chip" title="${t('aqiDetailNo2Title')}"><span class="aqi-detail-label">${t('aqiDetailNo2')}</span><b>${fmtPollutant(stats.no2)}</b></span>
-      <span class="aqi-detail-chip" title="${t('aqiDetailSo2Title')}"><span class="aqi-detail-label">${t('aqiDetailSo2')}</span><b>${fmtPollutant(stats.so2)}</b></span>
-    `;
+    panel.innerHTML = [
+      pollutantChip('aqiDetailPm25', 'aqiDetailPm25Title', stats.pm25, 'pm25'),
+      pollutantChip('aqiDetailPm10', 'aqiDetailPm10Title', stats.pm10, 'pm10'),
+      pollutantChip('aqiDetailO3', 'aqiDetailO3Title', stats.o3, 'o3'),
+      pollutantChip('aqiDetailNo2', 'aqiDetailNo2Title', stats.no2, 'no2'),
+      pollutantChip('aqiDetailSo2', 'aqiDetailSo2Title', stats.so2, 'so2'),
+    ].join("");
   }).catch(() => {
     panel.innerHTML = `<span class="aqi-detail-chip">${t('aqiDetailError')}</span>`;
   });
