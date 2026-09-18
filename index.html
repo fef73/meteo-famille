@@ -668,7 +668,7 @@ function formatTooltipDateTime(iso){
   const date = new Date(y, m - 1, d);
   const isCompact = window.innerWidth < 480;
   const dateStr = isCompact
-    ? date.toLocaleDateString(t('locale'), { day: "numeric", month: "numeric" })
+    ? date.toLocaleDateString(t('locale'), { weekday: "short", day: "numeric", month: "numeric" })
     : date.toLocaleDateString(t('locale'), { weekday: "short", day: "numeric", month: "long" });
   return `${dateStr} · ${timePart.slice(0, 5)}`;
 }
