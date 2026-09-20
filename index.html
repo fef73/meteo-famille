@@ -275,6 +275,22 @@
     color:#e8ecef; background:rgba(143,164,184,.18); border-color:rgba(143,164,184,.55); font-weight:600;
   }
 
+  .hotspot-banner{
+    margin-top:22px; display:flex; gap:14px; align-items:flex-start;
+    background:linear-gradient(135deg, rgba(143,164,184,0.16), rgba(143,164,184,0.05));
+    border:1px solid rgba(143,164,184,0.4); border-radius:14px;
+    padding:16px 18px;
+  }
+  .hotspot-icon{font-size:22px; line-height:1; padding-top:2px;}
+  .hotspot-title{
+    font-family:'Space Grotesk', sans-serif; font-size:14.5px; font-weight:500;
+    color:var(--text-hi); margin-bottom:4px;
+  }
+  .hotspot-title b{color:#c3ccd6; font-family:'IBM Plex Mono', monospace;}
+  .hotspot-note{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-lo); line-height:1.5;
+  }
+
   .features-panel{ margin-top:22px; }
   .features-panel details{
     background:var(--bg-panel); border:1px solid var(--hairline); border-radius:16px;
@@ -373,6 +389,14 @@
   <div class="bulletin" id="bulletin-period"></div>
 
   <div class="bulletin" id="bulletin"></div>
+
+  <div class="hotspot-banner" id="smog-banner">
+    <div class="hotspot-icon">🌫️</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="smog-title">Calcul du point le plus pollué du monde…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes connues pour leur pollution atmosphérique élevée — pas une recherche exhaustive de toutes les villes du monde.</div>
+    </div>
+  </div>
 
   <div class="features-panel" id="features-panel"></div>
 
@@ -478,6 +502,10 @@ const TRANSLATIONS = {
     promptCopy: "Copie ce lien :",
     hintLegendClick: "Vous pouvez choisir ce que vous voyez en cliquant ci-dessus sur les noms de villes ou les seuils",
     footerSignature: "Créé par fef73 avec claude.ai · 14 septembre 2026",
+    smogCalculating: "Calcul du point le plus pollué du monde…",
+    smogResult: "Aujourd'hui, l'endroit le plus pollué parmi ces grandes villes est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
+    smogError: "Impossible de calculer le point le plus pollué du monde pour le moment.",
+    smogNote: "Estimé à partir d'une sélection de grandes villes connues pour leur pollution atmosphérique élevée — pas une recherche exhaustive de toutes les villes du monde.",
     langBtn: "EN",
     locale: "fr-FR",
   },
@@ -554,6 +582,10 @@ const TRANSLATIONS = {
     promptCopy: "Copy this link:",
     hintLegendClick: "You can choose what you see by clicking above on the city names or the thresholds",
     footerSignature: "Made by fef73 with claude.ai · Sep 14, 2026",
+    smogCalculating: "Calculating the world's most polluted spot…",
+    smogResult: "Today, the most polluted spot among these major cities is <b>{name}, {country}</b> — air quality index (AQI) of <b>{aqi}</b>",
+    smogError: "Unable to calculate the world's most polluted spot right now.",
+    smogNote: "Estimated from a curated selection of major cities known for high air pollution — not an exhaustive search of every city in the world.",
     langBtn: "FR",
     locale: "en-GB",
   },
@@ -1191,6 +1223,57 @@ function pollenChip(labelKey, titleKey, value){
   window.addEventListener("resize", hideTip);
 })();
 
+// ---------- World smog (curated high-pollution locations) ----------
+const POLLUTED_HOTSPOTS = [
+  { name:"Delhi", country:"Inde", lat:28.7041, lon:77.1025 },
+  { name:"Lahore", country:"Pakistan", lat:31.5497, lon:74.3436 },
+  { name:"Dhaka", country:"Bangladesh", lat:23.8103, lon:90.4125 },
+  { name:"Kolkata", country:"Inde", lat:22.5726, lon:88.3639 },
+  { name:"Karachi", country:"Pakistan", lat:24.8607, lon:67.0011 },
+  { name:"Kathmandu", country:"Népal", lat:27.7172, lon:85.3240 },
+  { name:"Lucknow", country:"Inde", lat:26.8467, lon:80.9462 },
+  { name:"Patna", country:"Inde", lat:25.5941, lon:85.1376 },
+  { name:"Baghdad", country:"Irak", lat:33.3152, lon:44.3661 },
+  { name:"Le Caire", country:"Égypte", lat:30.0444, lon:31.2357 },
+  { name:"Oulan-Bator", country:"Mongolie", lat:47.8864, lon:106.9057 },
+  { name:"Jakarta", country:"Indonésie", lat:-6.2088, lon:106.8456 },
+  { name:"Hanoï", country:"Vietnam", lat:21.0278, lon:105.8342 },
+  { name:"Lagos", country:"Nigeria", lat:6.5244, lon:3.3792 },
+  { name:"Accra", country:"Ghana", lat:5.6037, lon:-0.1870 },
+  { name:"Kano", country:"Nigeria", lat:12.0022, lon:8.5920 },
+  { name:"Mexico", country:"Mexique", lat:19.4326, lon:-99.1332 },
+  { name:"Santiago", country:"Chili", lat:-33.4489, lon:-70.6693 },
+  { name:"Riyad", country:"Arabie Saoudite", lat:24.7136, lon:46.6753 },
+  { name:"Pékin", country:"Chine", lat:39.9042, lon:116.4074 },
+];
+
+async function fetchCurrentAqi(spot){
+  const url = `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${spot.lat}&longitude=${spot.lon}&current=european_aqi&timezone=auto`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("smog fetch failed");
+  const data = await res.json();
+  const aqi = data.current && data.current.european_aqi;
+  if(aqi == null) throw new Error("smog fetch: no data");
+  return aqi;
+}
+
+let smogWinner = null;
+async function loadWorldSmog(){
+  const titleEl = document.getElementById("smog-title");
+  if(!titleEl) return;
+  try{
+    const values = await Promise.all(POLLUTED_HOTSPOTS.map(async spot => {
+      const aqi = await fetchCurrentAqi(spot);
+      return { spot, aqi };
+    }));
+    values.sort((a, b) => b.aqi - a.aqi);
+    smogWinner = values[0];
+    titleEl.innerHTML = t("smogResult", { name: smogWinner.spot.name, country: smogWinner.spot.country, aqi: Math.round(smogWinner.aqi) });
+  }catch(err){
+    titleEl.textContent = t("smogError");
+  }
+}
+
 function toggleAqiDetail(cityKey){
   const city = CITIES.find(c => c.key === cityKey);
   if(!city) return;
@@ -1712,7 +1795,7 @@ function shareSite(){
   }
 }
 
-document.getElementById("refresh-btn").addEventListener("click", loadAndRender);
+document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldSmog(); });
 document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
@@ -1818,6 +1901,8 @@ function renderFeatures(){
 
 function applyStaticTranslations(){
   renderFeatures();
+  const smogNote = document.querySelector("#smog-banner .hotspot-note");
+  if(smogNote) smogNote.textContent = t("smogNote");
   document.documentElement.lang = lang;
   document.getElementById("eyebrow-text").textContent = t('eyebrow');
   document.getElementById("main-title").textContent = t('title');
@@ -1867,6 +1952,8 @@ document.querySelectorAll(".day-toggle-btn").forEach(btn => {
 updateSubtitle();
 loadAndRender();
 setInterval(loadAndRender, 15 * 60 * 1000);
+loadWorldSmog();
+setInterval(loadWorldSmog, 30 * 60 * 1000);
 </script>
 <script data-goatcounter="https://fef73.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
