@@ -418,6 +418,38 @@
     </div>
   </div>
 
+  <div class="hotspot-banner" id="hotspot-europe-banner">
+    <div class="hotspot-icon">🔥</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="hotspot-europe-title">Calcul du point le plus chaud d'Europe…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes européennes — pas une recherche exhaustive de toutes les villes d'Europe.</div>
+    </div>
+  </div>
+
+  <div class="hotspot-banner coldspot-banner" id="coldspot-europe-banner">
+    <div class="hotspot-icon">❄️</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="coldspot-europe-title">Calcul du point le plus froid d'Europe…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes européennes — pas une recherche exhaustive de toutes les villes d'Europe.</div>
+    </div>
+  </div>
+
+  <div class="hotspot-banner" id="hotspot-france-banner">
+    <div class="hotspot-icon">🔥</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="hotspot-france-title">Calcul de la ville la plus chaude de France…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes françaises — pas une recherche exhaustive de toutes les villes de France.</div>
+    </div>
+  </div>
+
+  <div class="hotspot-banner coldspot-banner" id="coldspot-france-banner">
+    <div class="hotspot-icon">❄️</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="coldspot-france-title">Calcul de la ville la plus froide de France…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes françaises — pas une recherche exhaustive de toutes les villes de France.</div>
+    </div>
+  </div>
+
   <div class="hotspot-banner smog-banner" id="smog-banner">
     <div class="hotspot-icon">🌫️</div>
     <div class="hotspot-body">
@@ -431,6 +463,14 @@
     <div class="hotspot-body">
       <div class="hotspot-title" id="smog-europe-title">Calcul du point le plus pollué d'Europe…</div>
       <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes européennes connues pour leur pollution atmosphérique — pas une recherche exhaustive de toutes les villes d'Europe.</div>
+    </div>
+  </div>
+
+  <div class="hotspot-banner smog-banner" id="smog-france-banner">
+    <div class="hotspot-icon">🌫️</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="smog-france-title">Calcul de la ville la plus polluée de France…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes françaises — pas une recherche exhaustive de toutes les villes de France.</div>
     </div>
   </div>
 
@@ -546,14 +586,34 @@ const TRANSLATIONS = {
     coldspotResult: "Aujourd'hui, l'endroit le plus froid parmi ces zones extrêmes est <b>{name}, {country}</b> — <b>{temp}{u}</b> prévus",
     coldspotError: "Impossible de calculer le point le plus froid du monde pour le moment.",
     coldspotNote: "Estimé à partir d'une sélection de zones connues pour le froid extrême (Sibérie, Arctique, Antarctique, stations polaires) — pas une recherche exhaustive de toutes les villes du monde.",
+    hotspotEuropeCalculating: "Calcul du point le plus chaud d'Europe…",
+    hotspotEuropeResult: "Aujourd'hui, l'endroit le plus chaud parmi ces grandes villes d'Europe est <b>{name}, {country}</b> — <b>{temp}{u}</b> prévus",
+    hotspotEuropeError: "Impossible de calculer le point le plus chaud d'Europe pour le moment.",
+    hotspotEuropeNote: "Estimé à partir d'une sélection de grandes villes européennes — pas une recherche exhaustive de toutes les villes d'Europe.",
+    coldspotEuropeCalculating: "Calcul du point le plus froid d'Europe…",
+    coldspotEuropeResult: "Aujourd'hui, l'endroit le plus froid parmi ces grandes villes d'Europe est <b>{name}, {country}</b> — <b>{temp}{u}</b> prévus",
+    coldspotEuropeError: "Impossible de calculer le point le plus froid d'Europe pour le moment.",
+    coldspotEuropeNote: "Estimé à partir d'une sélection de grandes villes européennes — pas une recherche exhaustive de toutes les villes d'Europe.",
+    hotspotFranceCalculating: "Calcul de la ville la plus chaude de France…",
+    hotspotFranceResult: "Aujourd'hui, la ville la plus chaude parmi ces grandes villes françaises est <b>{name}</b> — <b>{temp}{u}</b> prévus",
+    hotspotFranceError: "Impossible de calculer la ville la plus chaude de France pour le moment.",
+    hotspotFranceNote: "Estimé à partir d'une sélection de grandes villes françaises — pas une recherche exhaustive de toutes les villes de France.",
+    coldspotFranceCalculating: "Calcul de la ville la plus froide de France…",
+    coldspotFranceResult: "Aujourd'hui, la ville la plus froide parmi ces grandes villes françaises est <b>{name}</b> — <b>{temp}{u}</b> prévus",
+    coldspotFranceError: "Impossible de calculer la ville la plus froide de France pour le moment.",
+    coldspotFranceNote: "Estimé à partir d'une sélection de grandes villes françaises — pas une recherche exhaustive de toutes les villes de France.",
     smogCalculating: "Calcul du point le plus pollué du monde…",
-    smogResult: "Aujourd'hui, l'endroit le plus pollué parmi ces grandes villes est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
+    smogResult: "Aujourd'hui, l'endroit le plus pollué parmi les grandes villes du monde est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
     smogError: "Impossible de calculer le point le plus pollué du monde pour le moment.",
     smogNote: "Estimé à partir d'une sélection de grandes villes connues pour leur pollution atmosphérique élevée — pas une recherche exhaustive de toutes les villes du monde.",
     smogEuropeCalculating: "Calcul du point le plus pollué d'Europe…",
     smogEuropeResult: "Aujourd'hui, l'endroit le plus pollué parmi ces grandes villes d'Europe est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
     smogEuropeError: "Impossible de calculer le point le plus pollué d'Europe pour le moment.",
     smogEuropeNote: "Estimé à partir d'une sélection de grandes villes européennes connues pour leur pollution atmosphérique — pas une recherche exhaustive de toutes les villes d'Europe.",
+    smogFranceCalculating: "Calcul de la ville la plus polluée de France…",
+    smogFranceResult: "Aujourd'hui, la ville la plus polluée parmi ces grandes villes françaises est <b>{name}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
+    smogFranceError: "Impossible de calculer la ville la plus polluée de France pour le moment.",
+    smogFranceNote: "Estimé à partir d'une sélection de grandes villes françaises — pas une recherche exhaustive de toutes les villes de France.",
     langBtn: "EN",
     locale: "fr-FR",
   },
@@ -638,6 +698,22 @@ const TRANSLATIONS = {
     coldspotResult: "Today, the coldest spot among these extreme zones is <b>{name}, {country}</b> — <b>{temp}{u}</b> expected",
     coldspotError: "Unable to calculate the world's coldest spot right now.",
     coldspotNote: "Estimated from a curated selection of locations known for extreme cold (Siberia, Arctic, Antarctic, polar stations) — not an exhaustive search of every city in the world.",
+    hotspotEuropeCalculating: "Calculating Europe's hottest spot…",
+    hotspotEuropeResult: "Today, the hottest spot among these major European cities is <b>{name}, {country}</b> — <b>{temp}{u}</b> expected",
+    hotspotEuropeError: "Unable to calculate Europe's hottest spot right now.",
+    hotspotEuropeNote: "Estimated from a curated selection of major European cities — not an exhaustive search of every city in Europe.",
+    coldspotEuropeCalculating: "Calculating Europe's coldest spot…",
+    coldspotEuropeResult: "Today, the coldest spot among these major European cities is <b>{name}, {country}</b> — <b>{temp}{u}</b> expected",
+    coldspotEuropeError: "Unable to calculate Europe's coldest spot right now.",
+    coldspotEuropeNote: "Estimated from a curated selection of major European cities — not an exhaustive search of every city in Europe.",
+    hotspotFranceCalculating: "Calculating France's hottest city…",
+    hotspotFranceResult: "Today, the hottest city among these major French cities is <b>{name}</b> — <b>{temp}{u}</b> expected",
+    hotspotFranceError: "Unable to calculate France's hottest city right now.",
+    hotspotFranceNote: "Estimated from a curated selection of major French cities — not an exhaustive search of every city in France.",
+    coldspotFranceCalculating: "Calculating France's coldest city…",
+    coldspotFranceResult: "Today, the coldest city among these major French cities is <b>{name}</b> — <b>{temp}{u}</b> expected",
+    coldspotFranceError: "Unable to calculate France's coldest city right now.",
+    coldspotFranceNote: "Estimated from a curated selection of major French cities — not an exhaustive search of every city in France.",
     smogCalculating: "Calculating the world's most polluted spot…",
     smogResult: "Today, the most polluted spot among these major cities is <b>{name}, {country}</b> — air quality index (AQI) of <b>{aqi}</b>",
     smogError: "Unable to calculate the world's most polluted spot right now.",
@@ -646,6 +722,10 @@ const TRANSLATIONS = {
     smogEuropeResult: "Today, the most polluted spot among these major European cities is <b>{name}, {country}</b> — air quality index (AQI) of <b>{aqi}</b>",
     smogEuropeError: "Unable to calculate Europe's most polluted spot right now.",
     smogEuropeNote: "Estimated from a curated selection of major European cities known for air pollution — not an exhaustive search of every city in Europe.",
+    smogFranceCalculating: "Calculating France's most polluted city…",
+    smogFranceResult: "Today, the most polluted city among these major French cities is <b>{name}</b> — air quality index (AQI) of <b>{aqi}</b>",
+    smogFranceError: "Unable to calculate France's most polluted city right now.",
+    smogFranceNote: "Estimated from a curated selection of major French cities — not an exhaustive search of every city in France.",
     langBtn: "FR",
     locale: "en-GB",
   },
@@ -1416,6 +1496,76 @@ async function loadWorldColdspot(){
   }
 }
 
+// ---------- Europe hotspot/coldspot (reuses POLLUTED_EUROPE, defined below) ----------
+let hotspotEuropeWinner = null;
+async function loadHotspotEurope(){
+  const titleEl = document.getElementById("hotspot-europe-title");
+  if(!titleEl) return;
+  try{
+    const maxes = await Promise.all(POLLUTED_EUROPE.map(async spot => {
+      const max = await fetchDailyMax(spot);
+      return { spot, max };
+    }));
+    maxes.sort((a, b) => b.max - a.max);
+    hotspotEuropeWinner = maxes[0];
+    titleEl.innerHTML = t("hotspotEuropeResult", { name: hotspotEuropeWinner.spot.name, country: hotspotEuropeWinner.spot.country, temp: convTemp(hotspotEuropeWinner.max).toFixed(1), u: unitSuffix() });
+  }catch(err){
+    titleEl.textContent = t("hotspotEuropeError");
+  }
+}
+
+let coldspotEuropeWinner = null;
+async function loadColdspotEurope(){
+  const titleEl = document.getElementById("coldspot-europe-title");
+  if(!titleEl) return;
+  try{
+    const mins = await Promise.all(POLLUTED_EUROPE.map(async spot => {
+      const min = await fetchDailyMin(spot);
+      return { spot, min };
+    }));
+    mins.sort((a, b) => a.min - b.min);
+    coldspotEuropeWinner = mins[0];
+    titleEl.innerHTML = t("coldspotEuropeResult", { name: coldspotEuropeWinner.spot.name, country: coldspotEuropeWinner.spot.country, temp: convTemp(coldspotEuropeWinner.min).toFixed(1), u: unitSuffix() });
+  }catch(err){
+    titleEl.textContent = t("coldspotEuropeError");
+  }
+}
+
+// ---------- France hotspot/coldspot (reuses POLLUTED_FRANCE, defined below) ----------
+let hotspotFranceWinner = null;
+async function loadHotspotFrance(){
+  const titleEl = document.getElementById("hotspot-france-title");
+  if(!titleEl) return;
+  try{
+    const maxes = await Promise.all(POLLUTED_FRANCE.map(async spot => {
+      const max = await fetchDailyMax(spot);
+      return { spot, max };
+    }));
+    maxes.sort((a, b) => b.max - a.max);
+    hotspotFranceWinner = maxes[0];
+    titleEl.innerHTML = t("hotspotFranceResult", { name: hotspotFranceWinner.spot.name, temp: convTemp(hotspotFranceWinner.max).toFixed(1), u: unitSuffix() });
+  }catch(err){
+    titleEl.textContent = t("hotspotFranceError");
+  }
+}
+
+let coldspotFranceWinner = null;
+async function loadColdspotFrance(){
+  const titleEl = document.getElementById("coldspot-france-title");
+  if(!titleEl) return;
+  try{
+    const mins = await Promise.all(POLLUTED_FRANCE.map(async spot => {
+      const min = await fetchDailyMin(spot);
+      return { spot, min };
+    }));
+    mins.sort((a, b) => a.min - b.min);
+    coldspotFranceWinner = mins[0];
+    titleEl.innerHTML = t("coldspotFranceResult", { name: coldspotFranceWinner.spot.name, temp: convTemp(coldspotFranceWinner.min).toFixed(1), u: unitSuffix() });
+  }catch(err){
+    titleEl.textContent = t("coldspotFranceError");
+  }
+}
+
 let smogWinner = null;
 async function loadWorldSmog(){
   const titleEl = document.getElementById("smog-title");
@@ -1472,6 +1622,47 @@ async function loadWorldSmogEurope(){
     titleEl.innerHTML = t("smogEuropeResult", { name: smogEuropeWinner.spot.name, country: smogEuropeWinner.spot.country, aqi: Math.round(smogEuropeWinner.aqi) });
   }catch(err){
     titleEl.textContent = t("smogEuropeError");
+  }
+}
+
+// ---------- France smog (curated major French cities) ----------
+const POLLUTED_FRANCE = [
+  { name:"Paris", lat:48.8566, lon:2.3522 },
+  { name:"Lyon", lat:45.7640, lon:4.8357 },
+  { name:"Marseille", lat:43.2965, lon:5.3698 },
+  { name:"Grenoble", lat:45.1885, lon:5.7245 },
+  { name:"Strasbourg", lat:48.5734, lon:7.7521 },
+  { name:"Lille", lat:50.6292, lon:3.0573 },
+  { name:"Toulouse", lat:43.6047, lon:1.4442 },
+  { name:"Nice", lat:43.7102, lon:7.2620 },
+  { name:"Bordeaux", lat:44.8378, lon:-0.5792 },
+  { name:"Nantes", lat:47.2184, lon:-1.5536 },
+  { name:"Rouen", lat:49.4432, lon:1.0999 },
+  { name:"Le Havre", lat:49.4944, lon:0.1079 },
+  { name:"Dunkerque", lat:51.0343, lon:2.3768 },
+  { name:"Fos-sur-Mer", lat:43.4392, lon:4.9483 },
+  { name:"Clermont-Ferrand", lat:45.7772, lon:3.0870 },
+  { name:"Montpellier", lat:43.6108, lon:3.8767 },
+  { name:"Nancy", lat:48.6921, lon:6.1844 },
+  { name:"Metz", lat:49.1193, lon:6.1757 },
+  { name:"Reims", lat:49.2583, lon:4.0317 },
+  { name:"Annecy", lat:45.8992, lon:6.1294 },
+];
+
+let smogFranceWinner = null;
+async function loadWorldSmogFrance(){
+  const titleEl = document.getElementById("smog-france-title");
+  if(!titleEl) return;
+  try{
+    const values = await Promise.all(POLLUTED_FRANCE.map(async spot => {
+      const aqi = await fetchCurrentAqi(spot);
+      return { spot, aqi };
+    }));
+    values.sort((a, b) => b.aqi - a.aqi);
+    smogFranceWinner = values[0];
+    titleEl.innerHTML = t("smogFranceResult", { name: smogFranceWinner.spot.name, aqi: Math.round(smogFranceWinner.aqi) });
+  }catch(err){
+    titleEl.textContent = t("smogFranceError");
   }
 }
 
@@ -1996,7 +2187,7 @@ function shareSite(){
   }
 }
 
-document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldHotspot(); loadWorldColdspot(); loadWorldSmog(); loadWorldSmogEurope(); });
+document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldHotspot(); loadWorldColdspot(); loadHotspotEurope(); loadColdspotEurope(); loadHotspotFrance(); loadColdspotFrance(); loadWorldSmog(); loadWorldSmogEurope(); loadWorldSmogFrance(); });
 document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
@@ -2106,10 +2297,20 @@ function applyStaticTranslations(){
   if(hotspotNote) hotspotNote.textContent = t("hotspotNote");
   const coldspotNote = document.querySelector("#coldspot-banner .hotspot-note");
   if(coldspotNote) coldspotNote.textContent = t("coldspotNote");
+  const hotspotEuropeNote = document.querySelector("#hotspot-europe-banner .hotspot-note");
+  if(hotspotEuropeNote) hotspotEuropeNote.textContent = t("hotspotEuropeNote");
+  const coldspotEuropeNote = document.querySelector("#coldspot-europe-banner .hotspot-note");
+  if(coldspotEuropeNote) coldspotEuropeNote.textContent = t("coldspotEuropeNote");
+  const hotspotFranceNote = document.querySelector("#hotspot-france-banner .hotspot-note");
+  if(hotspotFranceNote) hotspotFranceNote.textContent = t("hotspotFranceNote");
+  const coldspotFranceNote = document.querySelector("#coldspot-france-banner .hotspot-note");
+  if(coldspotFranceNote) coldspotFranceNote.textContent = t("coldspotFranceNote");
   const smogNote = document.querySelector("#smog-banner .hotspot-note");
   if(smogNote) smogNote.textContent = t("smogNote");
   const smogEuropeNote = document.querySelector("#smog-europe-banner .hotspot-note");
   if(smogEuropeNote) smogEuropeNote.textContent = t("smogEuropeNote");
+  const smogFranceNote = document.querySelector("#smog-france-banner .hotspot-note");
+  if(smogFranceNote) smogFranceNote.textContent = t("smogFranceNote");
   document.documentElement.lang = lang;
   document.getElementById("eyebrow-text").textContent = t('eyebrow');
   document.getElementById("main-title").textContent = t('title');
@@ -2163,10 +2364,20 @@ loadWorldHotspot();
 setInterval(loadWorldHotspot, 30 * 60 * 1000);
 loadWorldColdspot();
 setInterval(loadWorldColdspot, 30 * 60 * 1000);
+loadHotspotEurope();
+setInterval(loadHotspotEurope, 30 * 60 * 1000);
+loadColdspotEurope();
+setInterval(loadColdspotEurope, 30 * 60 * 1000);
+loadHotspotFrance();
+setInterval(loadHotspotFrance, 30 * 60 * 1000);
+loadColdspotFrance();
+setInterval(loadColdspotFrance, 30 * 60 * 1000);
 loadWorldSmog();
 setInterval(loadWorldSmog, 30 * 60 * 1000);
 loadWorldSmogEurope();
 setInterval(loadWorldSmogEurope, 30 * 60 * 1000);
+loadWorldSmogFrance();
+setInterval(loadWorldSmogFrance, 30 * 60 * 1000);
 </script>
 <script data-goatcounter="https://fef73.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
