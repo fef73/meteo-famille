@@ -426,6 +426,14 @@
     </div>
   </div>
 
+  <div class="hotspot-banner smog-banner" id="smog-europe-banner">
+    <div class="hotspot-icon">🌫️</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="smog-europe-title">Calcul du point le plus pollué d'Europe…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de grandes villes européennes connues pour leur pollution atmosphérique — pas une recherche exhaustive de toutes les villes d'Europe.</div>
+    </div>
+  </div>
+
   <div class="features-panel" id="features-panel"></div>
 
   <footer>
@@ -542,6 +550,10 @@ const TRANSLATIONS = {
     smogResult: "Aujourd'hui, l'endroit le plus pollué parmi ces grandes villes est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
     smogError: "Impossible de calculer le point le plus pollué du monde pour le moment.",
     smogNote: "Estimé à partir d'une sélection de grandes villes connues pour leur pollution atmosphérique élevée — pas une recherche exhaustive de toutes les villes du monde.",
+    smogEuropeCalculating: "Calcul du point le plus pollué d'Europe…",
+    smogEuropeResult: "Aujourd'hui, l'endroit le plus pollué parmi ces grandes villes d'Europe est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
+    smogEuropeError: "Impossible de calculer le point le plus pollué d'Europe pour le moment.",
+    smogEuropeNote: "Estimé à partir d'une sélection de grandes villes européennes connues pour leur pollution atmosphérique — pas une recherche exhaustive de toutes les villes d'Europe.",
     langBtn: "EN",
     locale: "fr-FR",
   },
@@ -630,6 +642,10 @@ const TRANSLATIONS = {
     smogResult: "Today, the most polluted spot among these major cities is <b>{name}, {country}</b> — air quality index (AQI) of <b>{aqi}</b>",
     smogError: "Unable to calculate the world's most polluted spot right now.",
     smogNote: "Estimated from a curated selection of major cities known for high air pollution — not an exhaustive search of every city in the world.",
+    smogEuropeCalculating: "Calculating Europe's most polluted spot…",
+    smogEuropeResult: "Today, the most polluted spot among these major European cities is <b>{name}, {country}</b> — air quality index (AQI) of <b>{aqi}</b>",
+    smogEuropeError: "Unable to calculate Europe's most polluted spot right now.",
+    smogEuropeNote: "Estimated from a curated selection of major European cities known for air pollution — not an exhaustive search of every city in Europe.",
     langBtn: "FR",
     locale: "en-GB",
   },
@@ -1417,6 +1433,48 @@ async function loadWorldSmog(){
   }
 }
 
+// ---------- Europe smog (curated European high-pollution cities) ----------
+const POLLUTED_EUROPE = [
+  { name:"Skopje", country:"Macédoine du Nord", lat:41.9981, lon:21.4254 },
+  { name:"Sarajevo", country:"Bosnie-Herzégovine", lat:43.8563, lon:18.4131 },
+  { name:"Tuzla", country:"Bosnie-Herzégovine", lat:44.5382, lon:18.6738 },
+  { name:"Sofia", country:"Bulgarie", lat:42.6977, lon:23.3219 },
+  { name:"Katowice", country:"Pologne", lat:50.2649, lon:19.0238 },
+  { name:"Cracovie", country:"Pologne", lat:50.0647, lon:19.9450 },
+  { name:"Varsovie", country:"Pologne", lat:52.2297, lon:21.0122 },
+  { name:"Belgrade", country:"Serbie", lat:44.7866, lon:20.4489 },
+  { name:"Novi Sad", country:"Serbie", lat:45.2671, lon:19.8335 },
+  { name:"Zagreb", country:"Croatie", lat:45.8150, lon:15.9819 },
+  { name:"Bucarest", country:"Roumanie", lat:44.4268, lon:26.1025 },
+  { name:"Milan", country:"Italie", lat:45.4642, lon:9.1900 },
+  { name:"Turin", country:"Italie", lat:45.0703, lon:7.6869 },
+  { name:"Naples", country:"Italie", lat:40.8518, lon:14.2681 },
+  { name:"Madrid", country:"Espagne", lat:40.4168, lon:-3.7038 },
+  { name:"Paris", country:"France", lat:48.8566, lon:2.3522 },
+  { name:"Londres", country:"Royaume-Uni", lat:51.5074, lon:-0.1278 },
+  { name:"Budapest", country:"Hongrie", lat:47.4979, lon:19.0402 },
+  { name:"Prague", country:"République tchèque", lat:50.0755, lon:14.4378 },
+  { name:"Ostrava", country:"République tchèque", lat:49.8209, lon:18.2625 },
+  { name:"Athènes", country:"Grèce", lat:37.9838, lon:23.7275 },
+];
+
+let smogEuropeWinner = null;
+async function loadWorldSmogEurope(){
+  const titleEl = document.getElementById("smog-europe-title");
+  if(!titleEl) return;
+  try{
+    const values = await Promise.all(POLLUTED_EUROPE.map(async spot => {
+      const aqi = await fetchCurrentAqi(spot);
+      return { spot, aqi };
+    }));
+    values.sort((a, b) => b.aqi - a.aqi);
+    smogEuropeWinner = values[0];
+    titleEl.innerHTML = t("smogEuropeResult", { name: smogEuropeWinner.spot.name, country: smogEuropeWinner.spot.country, aqi: Math.round(smogEuropeWinner.aqi) });
+  }catch(err){
+    titleEl.textContent = t("smogEuropeError");
+  }
+}
+
 function toggleAqiDetail(cityKey){
   const city = CITIES.find(c => c.key === cityKey);
   if(!city) return;
@@ -1938,7 +1996,7 @@ function shareSite(){
   }
 }
 
-document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldHotspot(); loadWorldColdspot(); loadWorldSmog(); });
+document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldHotspot(); loadWorldColdspot(); loadWorldSmog(); loadWorldSmogEurope(); });
 document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
@@ -2050,6 +2108,8 @@ function applyStaticTranslations(){
   if(coldspotNote) coldspotNote.textContent = t("coldspotNote");
   const smogNote = document.querySelector("#smog-banner .hotspot-note");
   if(smogNote) smogNote.textContent = t("smogNote");
+  const smogEuropeNote = document.querySelector("#smog-europe-banner .hotspot-note");
+  if(smogEuropeNote) smogEuropeNote.textContent = t("smogEuropeNote");
   document.documentElement.lang = lang;
   document.getElementById("eyebrow-text").textContent = t('eyebrow');
   document.getElementById("main-title").textContent = t('title');
@@ -2105,6 +2165,8 @@ loadWorldColdspot();
 setInterval(loadWorldColdspot, 30 * 60 * 1000);
 loadWorldSmog();
 setInterval(loadWorldSmog, 30 * 60 * 1000);
+loadWorldSmogEurope();
+setInterval(loadWorldSmogEurope, 30 * 60 * 1000);
 </script>
 <script data-goatcounter="https://fef73.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
