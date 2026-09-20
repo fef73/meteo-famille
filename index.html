@@ -277,8 +277,8 @@
 
   .hotspot-banner{
     margin-top:22px; display:flex; gap:14px; align-items:flex-start;
-    background:linear-gradient(135deg, rgba(143,164,184,0.16), rgba(143,164,184,0.05));
-    border:1px solid rgba(143,164,184,0.4); border-radius:14px;
+    background:linear-gradient(135deg, rgba(231,111,81,0.14), rgba(244,162,97,0.06));
+    border:1px solid rgba(231,111,81,0.35); border-radius:14px;
     padding:16px 18px;
   }
   .hotspot-icon{font-size:22px; line-height:1; padding-top:2px;}
@@ -286,10 +286,22 @@
     font-family:'Space Grotesk', sans-serif; font-size:14.5px; font-weight:500;
     color:var(--text-hi); margin-bottom:4px;
   }
-  .hotspot-title b{color:#c3ccd6; font-family:'IBM Plex Mono', monospace;}
+  .hotspot-title b{color:var(--coral, #e76f51); font-family:'IBM Plex Mono', monospace;}
   .hotspot-note{
     font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-lo); line-height:1.5;
   }
+  .coldspot-banner{
+    margin-top:12px;
+    background:linear-gradient(135deg, rgba(69,123,157,0.16), rgba(126,228,184,0.06));
+    border:1px solid rgba(69,123,157,0.4);
+  }
+  .coldspot-banner .hotspot-title b{color:var(--azure, #457b9d);}
+  .smog-banner{
+    margin-top:12px;
+    background:linear-gradient(135deg, rgba(143,164,184,0.16), rgba(143,164,184,0.05));
+    border:1px solid rgba(143,164,184,0.4);
+  }
+  .smog-banner .hotspot-title b{color:#c3ccd6;}
 
   .features-panel{ margin-top:22px; }
   .features-panel details{
@@ -390,7 +402,23 @@
 
   <div class="bulletin" id="bulletin"></div>
 
-  <div class="hotspot-banner" id="smog-banner">
+  <div class="hotspot-banner" id="hotspot-banner">
+    <div class="hotspot-icon">🔥</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="hotspot-title">Calcul du point le plus chaud du monde…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de zones connues pour la chaleur extrême (déserts et régions records) — pas une recherche exhaustive de toutes les villes du monde.</div>
+    </div>
+  </div>
+
+  <div class="hotspot-banner coldspot-banner" id="coldspot-banner">
+    <div class="hotspot-icon">❄️</div>
+    <div class="hotspot-body">
+      <div class="hotspot-title" id="coldspot-title">Calcul du point le plus froid du monde…</div>
+      <div class="hotspot-note">Estimé à partir d'une sélection de zones connues pour le froid extrême (Sibérie, Arctique, Antarctique, stations polaires) — pas une recherche exhaustive de toutes les villes du monde.</div>
+    </div>
+  </div>
+
+  <div class="hotspot-banner smog-banner" id="smog-banner">
     <div class="hotspot-icon">🌫️</div>
     <div class="hotspot-body">
       <div class="hotspot-title" id="smog-title">Calcul du point le plus pollué du monde…</div>
@@ -502,6 +530,14 @@ const TRANSLATIONS = {
     promptCopy: "Copie ce lien :",
     hintLegendClick: "Vous pouvez choisir ce que vous voyez en cliquant ci-dessus sur les noms de villes ou les seuils",
     footerSignature: "Créé par fef73 avec claude.ai · 14 septembre 2026",
+    hotspotCalculating: "Calcul du point le plus chaud du monde…",
+    hotspotResult: "Aujourd'hui, l'endroit le plus chaud parmi ces zones extrêmes est <b>{name}, {country}</b> — <b>{temp}{u}</b> prévus",
+    hotspotError: "Impossible de calculer le point le plus chaud du monde pour le moment.",
+    hotspotNote: "Estimé à partir d'une sélection de zones connues pour la chaleur extrême (déserts et régions records) — pas une recherche exhaustive de toutes les villes du monde.",
+    coldspotCalculating: "Calcul du point le plus froid du monde…",
+    coldspotResult: "Aujourd'hui, l'endroit le plus froid parmi ces zones extrêmes est <b>{name}, {country}</b> — <b>{temp}{u}</b> prévus",
+    coldspotError: "Impossible de calculer le point le plus froid du monde pour le moment.",
+    coldspotNote: "Estimé à partir d'une sélection de zones connues pour le froid extrême (Sibérie, Arctique, Antarctique, stations polaires) — pas une recherche exhaustive de toutes les villes du monde.",
     smogCalculating: "Calcul du point le plus pollué du monde…",
     smogResult: "Aujourd'hui, l'endroit le plus pollué parmi ces grandes villes est <b>{name}, {country}</b> — indice de qualité de l'air (AQI) de <b>{aqi}</b>",
     smogError: "Impossible de calculer le point le plus pollué du monde pour le moment.",
@@ -582,6 +618,14 @@ const TRANSLATIONS = {
     promptCopy: "Copy this link:",
     hintLegendClick: "You can choose what you see by clicking above on the city names or the thresholds",
     footerSignature: "Made by fef73 with claude.ai · Sep 14, 2026",
+    hotspotCalculating: "Calculating the world's hottest spot…",
+    hotspotResult: "Today, the hottest spot among these extreme zones is <b>{name}, {country}</b> — <b>{temp}{u}</b> expected",
+    hotspotError: "Unable to calculate the world's hottest spot right now.",
+    hotspotNote: "Estimated from a curated selection of locations known for extreme heat (deserts and record-holding regions) — not an exhaustive search of every city in the world.",
+    coldspotCalculating: "Calculating the world's coldest spot…",
+    coldspotResult: "Today, the coldest spot among these extreme zones is <b>{name}, {country}</b> — <b>{temp}{u}</b> expected",
+    coldspotError: "Unable to calculate the world's coldest spot right now.",
+    coldspotNote: "Estimated from a curated selection of locations known for extreme cold (Siberia, Arctic, Antarctic, polar stations) — not an exhaustive search of every city in the world.",
     smogCalculating: "Calculating the world's most polluted spot…",
     smogResult: "Today, the most polluted spot among these major cities is <b>{name}, {country}</b> — air quality index (AQI) of <b>{aqi}</b>",
     smogError: "Unable to calculate the world's most polluted spot right now.",
@@ -1257,6 +1301,105 @@ async function fetchCurrentAqi(spot){
   return aqi;
 }
 
+// ---------- World hotspot (curated extreme-heat locations) ----------
+const HEAT_HOTSPOTS = [
+  { name:"Death Valley", country:"États-Unis", lat:36.4636, lon:-116.8656 },
+  { name:"Koweït City", country:"Koweït", lat:29.3759, lon:47.9774 },
+  { name:"Ahvaz", country:"Iran", lat:31.3183, lon:48.6706 },
+  { name:"Jacobabad", country:"Pakistan", lat:28.2769, lon:68.4514 },
+  { name:"Sibi", country:"Pakistan", lat:29.5433, lon:67.8773 },
+  { name:"Tombouctou", country:"Mali", lat:16.7666, lon:-3.0026 },
+  { name:"Agadez", country:"Niger", lat:16.9742, lon:7.9908 },
+  { name:"Faya-Largeau", country:"Tchad", lat:17.9257, lon:19.1043 },
+  { name:"Marble Bar", country:"Australie", lat:-21.1758, lon:119.7469 },
+  { name:"Oodnadatta", country:"Australie", lat:-27.5667, lon:135.4500 },
+  { name:"Dallol", country:"Éthiopie", lat:12.6086, lon:40.5 },
+  { name:"Phoenix", country:"États-Unis", lat:33.4484, lon:-112.0740 },
+  { name:"Riyad", country:"Arabie Saoudite", lat:24.7136, lon:46.6753 },
+  { name:"Doha", country:"Qatar", lat:25.2854, lon:51.5310 },
+  { name:"Bassorah", country:"Irak", lat:30.5085, lon:47.7835 },
+  { name:"Turfan", country:"Chine", lat:42.9370, lon:89.1709 },
+  { name:"Tirat Zvi", country:"Israël", lat:32.3667, lon:35.5333 },
+  { name:"Bandar-e Mahshahr", country:"Iran", lat:30.5589, lon:49.1963 },
+  { name:"Nouakchott", country:"Mauritanie", lat:18.0735, lon:-15.9582 },
+  { name:"Ouargla", country:"Algérie", lat:31.9500, lon:5.3167 },
+  { name:"Phalodi", country:"Inde", lat:27.1333, lon:72.3667 },
+];
+
+async function fetchDailyMax(spot){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=temperature_2m&forecast_days=1&timezone=auto`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("hotspot fetch failed");
+  const data = await res.json();
+  return Math.max(...data.hourly.temperature_2m);
+}
+
+let hotspotWinner = null;
+async function loadWorldHotspot(){
+  const titleEl = document.getElementById("hotspot-title");
+  if(!titleEl) return;
+  try{
+    const maxes = await Promise.all(HEAT_HOTSPOTS.map(async spot => {
+      const max = await fetchDailyMax(spot);
+      return { spot, max };
+    }));
+    maxes.sort((a, b) => b.max - a.max);
+    hotspotWinner = maxes[0];
+    titleEl.innerHTML = t("hotspotResult", { name: hotspotWinner.spot.name, country: hotspotWinner.spot.country, temp: convTemp(hotspotWinner.max).toFixed(1), u: unitSuffix() });
+  }catch(err){
+    titleEl.textContent = t("hotspotError");
+  }
+}
+
+// ---------- World coldspot (curated extreme-cold locations) ----------
+const COLD_HOTSPOTS = [
+  { name:"Oymiakon", country:"Russie", lat:63.4608, lon:142.7858 },
+  { name:"Verkhoïansk", country:"Russie", lat:67.5447, lon:133.3850 },
+  { name:"Iakoutsk", country:"Russie", lat:62.0355, lon:129.6755 },
+  { name:"Khatanga", country:"Russie", lat:71.9764, lon:102.4933 },
+  { name:"Tiksi", country:"Russie", lat:71.6872, lon:128.8694 },
+  { name:"Norilsk", country:"Russie", lat:69.3535, lon:88.2027 },
+  { name:"Utqiagvik (Barrow)", country:"États-Unis", lat:71.2906, lon:-156.7887 },
+  { name:"Fairbanks", country:"États-Unis", lat:64.8378, lon:-147.7164 },
+  { name:"Nome", country:"États-Unis", lat:64.5011, lon:-165.4064 },
+  { name:"Eureka", country:"Canada", lat:79.9833, lon:-85.9333 },
+  { name:"Alert", country:"Canada", lat:82.5018, lon:-62.3481 },
+  { name:"Yellowknife", country:"Canada", lat:62.4540, lon:-114.3718 },
+  { name:"International Falls", country:"États-Unis", lat:48.6023, lon:-93.4108 },
+  { name:"Nuuk", country:"Groenland", lat:64.1835, lon:-51.7216 },
+  { name:"Ittoqqortoormiit", country:"Groenland", lat:70.4861, lon:-21.9628 },
+  { name:"Longyearbyen", country:"Svalbard, Norvège", lat:78.2232, lon:15.6267 },
+  { name:"Oulan-Bator", country:"Mongolie", lat:47.8864, lon:106.9057 },
+  { name:"McMurdo", country:"Antarctique", lat:-77.8419, lon:166.6863 },
+  { name:"Vostok", country:"Antarctique", lat:-78.4645, lon:106.8339 },
+  { name:"Pôle Sud (Amundsen-Scott)", country:"Antarctique", lat:-90, lon:0 },
+];
+
+async function fetchDailyMin(spot){
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${spot.lat}&longitude=${spot.lon}&hourly=temperature_2m&forecast_days=1&timezone=auto`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("coldspot fetch failed");
+  const data = await res.json();
+  return Math.min(...data.hourly.temperature_2m);
+}
+
+let coldspotWinner = null;
+async function loadWorldColdspot(){
+  const titleEl = document.getElementById("coldspot-title");
+  if(!titleEl) return;
+  try{
+    const mins = await Promise.all(COLD_HOTSPOTS.map(async spot => {
+      const min = await fetchDailyMin(spot);
+      return { spot, min };
+    }));
+    mins.sort((a, b) => a.min - b.min);
+    coldspotWinner = mins[0];
+    titleEl.innerHTML = t("coldspotResult", { name: coldspotWinner.spot.name, country: coldspotWinner.spot.country, temp: convTemp(coldspotWinner.min).toFixed(1), u: unitSuffix() });
+  }catch(err){
+    titleEl.textContent = t("coldspotError");
+  }
+}
+
 let smogWinner = null;
 async function loadWorldSmog(){
   const titleEl = document.getElementById("smog-title");
@@ -1795,7 +1938,7 @@ function shareSite(){
   }
 }
 
-document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldSmog(); });
+document.getElementById("refresh-btn").addEventListener("click", () => { loadAndRender(); loadWorldHotspot(); loadWorldColdspot(); loadWorldSmog(); });
 document.getElementById("share-btn").addEventListener("click", shareSite);
 
 function updateSubtitle(){
@@ -1901,6 +2044,10 @@ function renderFeatures(){
 
 function applyStaticTranslations(){
   renderFeatures();
+  const hotspotNote = document.querySelector("#hotspot-banner .hotspot-note");
+  if(hotspotNote) hotspotNote.textContent = t("hotspotNote");
+  const coldspotNote = document.querySelector("#coldspot-banner .hotspot-note");
+  if(coldspotNote) coldspotNote.textContent = t("coldspotNote");
   const smogNote = document.querySelector("#smog-banner .hotspot-note");
   if(smogNote) smogNote.textContent = t("smogNote");
   document.documentElement.lang = lang;
@@ -1952,6 +2099,10 @@ document.querySelectorAll(".day-toggle-btn").forEach(btn => {
 updateSubtitle();
 loadAndRender();
 setInterval(loadAndRender, 15 * 60 * 1000);
+loadWorldHotspot();
+setInterval(loadWorldHotspot, 30 * 60 * 1000);
+loadWorldColdspot();
+setInterval(loadWorldColdspot, 30 * 60 * 1000);
 loadWorldSmog();
 setInterval(loadWorldSmog, 30 * 60 * 1000);
 </script>
