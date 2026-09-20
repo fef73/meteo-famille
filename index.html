@@ -1667,24 +1667,9 @@ async function loadWorldSmogFrance(){
   }
 }
 
-function toggleAqiDetail(cityKey){
-  const city = CITIES.find(c => c.key === cityKey);
-  if(!city) return;
+function loadAqiDetailPanel(city){
   const panel = document.getElementById("aqi-detail-" + city.key);
-  const caret = document.getElementById("aqi-caret-" + city.key);
-  if(!panel) return;
-
-  const willOpen = !panel.classList.contains("open");
-  if(!willOpen){
-    panel.classList.remove("open");
-    if(caret) caret.textContent = "▾";
-    return;
-  }
-
-  panel.classList.add("open");
-  if(caret) caret.textContent = "▴";
-  if(panel.dataset.loaded === "1") return;
-
+  if(!panel || panel.dataset.loaded === "1") return;
   panel.innerHTML = `<span class="aqi-detail-chip">…</span>`;
   getCurrentAirQuality(city).then(stats => {
     panel.dataset.loaded = "1";
@@ -1711,6 +1696,25 @@ function toggleAqiDetail(cityKey){
   }).catch(() => {
     panel.innerHTML = `<span class="aqi-detail-chip">${t('aqiDetailError')}</span>`;
   });
+}
+
+function toggleAqiDetail(cityKey){
+  const city = CITIES.find(c => c.key === cityKey);
+  if(!city) return;
+  const panel = document.getElementById("aqi-detail-" + city.key);
+  const caret = document.getElementById("aqi-caret-" + city.key);
+  if(!panel) return;
+
+  const willOpen = !panel.classList.contains("open");
+  if(!willOpen){
+    panel.classList.remove("open");
+    if(caret) caret.textContent = "▾";
+    return;
+  }
+
+  panel.classList.add("open");
+  if(caret) caret.textContent = "▴";
+  loadAqiDetailPanel(city);
 }
 
 function dayAbbrev(dateStr){
@@ -1810,9 +1814,9 @@ function buildCards(results){
         </div>
         <div class="card-aqi-avg" title="${t('aqiAvgTitle')}" onclick="toggleAqiDetail('${r.city.key}')">
           <span>${t('aqiAvgLabel')}</span>
-          <span><b id="aqi-avg-${r.city.key}">…</b><span class="aqi-caret" id="aqi-caret-${r.city.key}">▾</span></span>
+          <span><b id="aqi-avg-${r.city.key}">…</b><span class="aqi-caret" id="aqi-caret-${r.city.key}">▴</span></span>
         </div>
-        <div class="aqi-detail-panel" id="aqi-detail-${r.city.key}"></div>
+        <div class="aqi-detail-panel open" id="aqi-detail-${r.city.key}"></div>
         <div class="card-yearly-header">
           <span>${t('extremesHeader')}</span>
           <i class="cy-info" title="${t('extremesInfoTitle', { c: Math.round(convTemp(CANICULE_SEUIL_ANNUEL)), g: Math.round(convTemp(GEL_SEUIL_ANNUEL)), v: VENT_SEUIL_ANNUEL, a: AQI_SEUIL_ANNUEL, u: unitSuffix() })}">i</i>
@@ -1879,6 +1883,8 @@ function buildCards(results){
       const avgEl = document.getElementById("aqi-avg-" + r.city.key);
       if(avgEl) avgEl.textContent = "--";
     });
+
+    loadAqiDetailPanel(r.city);
 
     return Promise.allSettled([extremesPromise, aqiPromise, recentAqiAvgPromise]);
   });
