@@ -1376,7 +1376,7 @@ function pollenChip(labelKey, titleKey, value){
 // Les attributs title="" ne s'affichent qu'au survol, geste absent sur smartphone.
 // Ce composant remplace ce comportement par un tap/clic universel (PC et mobile).
 (function(){
-  const TAP_TOOLTIP_SELECTOR = ".aqi-chip[title], .aqi-detail-chip[title], .card-yearly[title], .cy-info[title]";
+  const TAP_TOOLTIP_SELECTOR = ".aqi-pop[title], .aqi-hist-pop[title], .aqi-chip[title], .aqi-detail-chip[title], .card-yearly[title], .cy-info[title]";
   let tipEl = null;
   let activeTarget = null;
 
