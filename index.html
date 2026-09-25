@@ -1219,9 +1219,19 @@ function getBassinPopulation(city){
   if(populationCache[key]) return populationCache[key];
   const p = (async () => {
     try{
-      const res = await fetch(`https://geo.api.gouv.fr/communes?lat=${city.lat}&lon=${city.lon}&fields=nom,population,codeEpci`);
-      if(res.ok){
-        const [c] = await res.json();
+      // a) par le NOM (les coordonnées peuvent tomber dans la commune voisine), si proche des coordonnées
+      let c = null;
+      const rn = await fetch(`https://geo.api.gouv.fr/communes?nom=${encodeURIComponent(city.name)}&fields=nom,population,codeEpci,centre&limit=5`);
+      if(rn.ok){
+        const list = await rn.json();
+        c = list.find(x => x.centre && (x.centre.coordinates[1] - city.lat) ** 2 + (x.centre.coordinates[0] - city.lon) ** 2 < 0.04) || null; // < ~20 km
+      }
+      // b) sinon par les coordonnées
+      if(!c){
+        const res = await fetch(`https://geo.api.gouv.fr/communes?lat=${city.lat}&lon=${city.lon}&fields=nom,population,codeEpci`);
+        if(res.ok) [c] = await res.json();
+      }
+      {
         if(c){
           if(c.codeEpci){
             const r2 = await fetch(`https://geo.api.gouv.fr/epcis/${c.codeEpci}?fields=nom,population`);
