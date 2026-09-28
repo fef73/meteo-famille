@@ -2482,6 +2482,24 @@ setInterval(loadWorldSmogEurope, 30 * 60 * 1000);
 loadWorldSmogFrance();
 setInterval(loadWorldSmogFrance, 30 * 60 * 1000);
 </script>
+<div id="offline-banner" style="display:none; position:fixed; left:50%; bottom:14px; transform:translateX(-50%); z-index:9999; max-width:calc(100% - 32px); background:#3a2a12; color:#f4d6a0; border:1px solid #f4a261; border-radius:10px; padding:8px 14px; font:13px/1.4 'IBM Plex Mono', monospace; box-shadow:0 4px 18px rgba(0,0,0,.4);"></div>
+<script>
+// Service worker : le site s'ouvre même sans réseau (voir sw.js)
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  // Données servies depuis la copie locale : on l'indique clairement
+  navigator.serviceWorker.addEventListener("message", ev => {
+    if(!ev.data || ev.data.type !== "offline-data") return;
+    const el = document.getElementById("offline-banner");
+    const en = String((typeof lang !== "undefined" && lang) || document.documentElement.lang || "").startsWith("en");
+    const d = ev.data.date ? new Date(ev.data.date) : null;
+    const when = d && !isNaN(d) ? d.toLocaleString(en ? "en-GB" : "fr-FR", { day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit" }) : "";
+    el.textContent = en ? `📴 Offline — data from ${when}` : `📴 Hors connexion — données du ${when}`;
+    el.style.display = "block";
+  });
+  window.addEventListener("online", () => { document.getElementById("offline-banner").style.display = "none"; });
+}
+</script>
 <script data-goatcounter="https://fef73.goatcounter.com/count"
         async src="//gc.zgo.at/count.js"></script>
 </body>
