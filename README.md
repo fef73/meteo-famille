@@ -1,52 +1,94 @@
-# Météo Famille — Qui a le plus chaud ?
+# Météo famille — Qui a le plus chaud ?
 
-Application météo mono-fichier (HTML/CSS/JS, sans backend) qui compare en direct les températures là où vivent les membres de la famille, via l'API [Open-Meteo](https://open-meteo.com/) (gratuite, sans clé API).
+Application météo mono-fichier (HTML/CSS/JS, sans backend) qui compare en direct les températures là où vit chaque membre de la famille, via l'API [Open-Meteo](https://open-meteo.com/) (gratuite, sans clé API).
+
+Site : https://fef73.github.io/meteo-famille/ — accessible aussi depuis le lanceur [comparateur-meteo.fr](https://comparateur-meteo.fr/).
 
 ## Famille
 
-- Suivi de plusieurs membres de la famille, chacun associé à sa ville et à son avatar (photo circulaire).
-- Clic sur un avatar dans le graphique ou dans la légende pour afficher son détail (tooltip dédié à cette personne).
+- Cinq lieux suivis, chacun associé à un ou plusieurs membres de la famille et à leur avatar :
+  - Narbonne — Benjamin
+  - Lyon — Audrey et Marine
+  - Fontcouverte-la-Toussuire (1800 m) — Fernand
+  - Marseille — Valentin
+  - Clermont-Ferrand — Loulou
+- L'avatar de chacun est placé sur le pic de sa courbe. Un clic sur un avatar, dans le graphique ou la légende, affiche son détail.
 
 ## Graphique de comparaison
 
-- 5 périodes disponibles : aujourd'hui, demain, après-demain, 3 jours, 7 jours.
-- Une courbe par personne, plus les seuils canicule et gel en pointillés.
-- Clic sur un nom dans la légende pour masquer/afficher sa courbe.
-- Phase de lune affichée dans le tooltip du graphique, en plus de l'heure et de la température.
+- 5 périodes : aujourd'hui, demain, après-demain, 3 jours, 7 jours.
+- Une courbe par lieu, plus deux lignes de seuil en pointillés : canicule (35 °C) et gel (0 °C).
+- Clic sur un nom dans la légende pour masquer/afficher sa courbe. Le choix est conservé quand on change de période.
+- Phase de lune affichée dans le tooltip.
 
 ## Cartes par personne
 
-Pour chaque membre de la famille :
-
-- Température actuelle (ou à midi pour demain/après-demain), icône météo, heure locale mise à jour en direct.
-- Humidité, vent (vitesse + direction), heure du soleil au plus haut, min/max de la période.
-- **AQI moyen (7 jours)** : cliquable, affiché en rouge si supérieur à 60. Le clic déplie :
-  - le détail par **polluant** — PM2.5, PM10, Ozone, NO₂, SO₂ — en rouge si le seuil santé OMS (moyenne 24h) est dépassé, avec description complète au survol de chaque puce ;
-  - le détail par **pollen** — bouleau, graminées, olivier, ambroisie, aulne, armoise — en rouge au-delà d'un repère indicatif de risque allergique (données disponibles pour l'Europe uniquement).
-- **Extrêmes sur 365 jours** (archives Open-Meteo, mesurées à l'emplacement exact de la ville) : nombre de jours de canicule, de gel, de vent fort et de mauvaise qualité d'air.
+- Température actuelle (ou à midi pour demain et après-demain), icône météo, heure locale en direct.
+- Humidité, vent (vitesse + direction), heure du soleil au zénith, min/max de la période.
+- **AQI moyen (7 jours)** : cliquable, en rouge au-delà de 60. Le clic déplie :
+  - le détail par **polluant** (PM2.5, PM10, Ozone, NO₂, SO₂), en rouge si le seuil santé OMS sur 24 h est dépassé ;
+  - le détail par **pollen** (bouleau, graminées, olivier, ambroisie, aulne, armoise), en rouge au-delà d'un repère de risque allergique.
+- **Population exposée** sur la ligne AQI :
+  - en France, bassin de l'intercommunalité (EPCI), données INSEE via `geo.api.gouv.fr` ;
+  - hors France, population de la ville (Open-Meteo / GeoNames) ;
+  - détail de la commune au survol.
+- **Extrêmes sur 365 jours**, à l'emplacement exact : nombre de jours de canicule (≥ 35 °C), de gel (≤ 0 °C), de vent fort (rafales ≥ 60 km/h) et de pollution (AQI ≥ 60).
 
 ## Bulletins
 
-- **Bulletin de la période** : qui a le plus chaud et qui a le plus froid en ce moment (ou pour la période affichée), avec alertes automatiques canicule/gel.
-- **Bulletin annuel** : qui, dans la famille, bat le record de jours de canicule, de gel ou de pollution sur les 365 derniers jours, avec alertes si un seuil est franchi.
-- Historique de pollution des 7 derniers jours complets, par personne (puces journalières, en évidence si AQI ≥60).
+- **Bulletin de la période** : qui a le plus chaud et qui a le plus froid, avec alertes canicule et gel.
+- **Bulletin annuel** : qui détient le record familial de jours de canicule, de gel ou de pollution sur les 365 derniers jours, avec alertes.
+- **Historique pollution** des 7 derniers jours par personne, avec la population du bassin.
+
+## Extrêmes du moment
+
+Bandeaux calculés en direct, chacun parmi une sélection de lieux (ce n'est pas une recherche exhaustive) :
+
+- point le plus chaud et le plus froid du **monde** (déserts, régions polaires, stations records) ;
+- point le plus chaud et le plus froid d'**Europe** (grandes villes européennes) ;
+- ville la plus chaude et la plus froide de **France** (grandes villes françaises) ;
+- lieu le plus pollué (indice AQI) parmi de grandes villes du monde, d'Europe et de France.
+
+## 📍 Mode GPS (« Moi »)
+
+- Depuis le lanceur [comparateur-meteo.fr](https://comparateur-meteo.fr/), le bouton **📍 Ma position** ouvre le site avec la position du téléphone. Une **6e courbe** et une **carte « Moi »** s'ajoutent à la famille.
+- Accès direct par URL, pour un raccourci ou une appli mobile :
+  ```
+  ?lat=45.5660&lon=5.9200&nom=Chambéry&alt=1035
+  ```
+  `lat` et `lon` sont obligatoires. `nom` (ou `ville`) donne le nom affiché, « Ma position » par défaut. `alt` (en m) est facultatif.
+- **Avatar « Moi »** au choix : 📍 (par défaut), l'un des avatars de la famille, ou une **photo du téléphone** (recadrée au centre et réduite).
+  - Se choisit en touchant l'avatar de la carte « Moi », ou dans le lanceur, qui le transmet dans le `#` de l'adresse (`#avatar=…`). Ce `#` n'est jamais envoyé au serveur.
+  - Il est mémorisé sur l'appareil, sans rien envoyer en ligne.
+
+## 📴 Hors connexion
+
+- Après une première visite avec réseau, le site s'ouvre sans réseau (service worker `sw.js`).
+- La dernière réponse Open-Meteo reçue pour chaque vue est réaffichée, avec un bandeau « 📴 Hors connexion — données du 28/09, 05:26 ».
+- Une vue jamais ouverte avec réseau (par exemple « 7 jours ») n'est pas disponible hors connexion.
 
 ## Confort d'usage
 
 - Interface bilingue FR/EN et unité °C/°F (préférences mémorisées).
-- Bouton de partage (partage natif ou copie de lien).
-- Rafraîchissement automatique des données.
-- Message d'astuce rappelant que l'on peut cliquer sur les noms/seuils de la légende pour personnaliser l'affichage.
+- Bouton de partage (partage natif ou copie du lien).
+- Rafraîchissement automatique : prévisions toutes les 15 minutes, extrêmes du moment toutes les 30 minutes, et bouton **↻ Actualiser**.
+- Le résumé des fonctionnalités est aussi affiché dans le site, dans un panneau repliable juste avant le pied de page.
 
 ## Sources de données
 
 - Prévisions horaires : `api.open-meteo.com`
 - Qualité de l'air (AQI, polluants, pollens) : `air-quality-api.open-meteo.com`
 - Archives 365 jours (extrêmes) : `archive-api.open-meteo.com`
+- Population hors France : `geocoding-api.open-meteo.com` (GeoNames)
+- Population en France : `geo.api.gouv.fr` (INSEE)
 
 ## Notes techniques
 
-- Fichier unique, aucune dépendance serveur — Chart.js chargé depuis un CDN pour le graphique.
-- Avatars intégrés en base64 directement dans le HTML (rognage circulaire, bordure colorée par ville).
-- Toutes les requêtes API sont mises en cache en mémoire (par ville) pour limiter les appels redondants.
-- Le résumé des fonctionnalités ci-dessus est aussi affiché directement dans le site, dans un panneau repliable juste avant le pied de page.
+- Fichier unique, aucune dépendance serveur. Chart.js est chargé depuis un CDN pour le graphique, et les avatars sont intégrés à la page.
+- `sw.js` : service worker (page, Chart.js, polices et dernières réponses Open-Meteo gardés sur l'appareil pour l'usage hors connexion).
+- Les statistiques sur 365 jours sont calculées une fois au chargement, puis gardées en mémoire.
+- Statistiques de visite anonymes et sans cookie avec GoatCounter.
+
+## Licence
+
+© 2026 Fernand (fef73) — tous droits réservés. Voir le fichier [LICENSE](LICENSE). Les données météo restent soumises aux licences de leurs fournisseurs (Open-Meteo CC BY 4.0, INSEE / Etalab). Les avatars de la famille ne peuvent pas être réutilisés.
