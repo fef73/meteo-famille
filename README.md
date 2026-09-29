@@ -39,7 +39,7 @@ Site : https://fef73.github.io/meteo-famille/ — accessible aussi depuis le lan
 - **Résumé par ville**, en tête du bulletin : temps dominant de la journée (ensoleillé, éclaircies, nuageux, brouillard) ou phénomène notable (pluie, neige, orages, avec leur durée en heures, ou en jours sur 3 et 7 jours), températures min → max, et rafales quand elles dépassent 40 km/h.
 - **Bulletin de la période** : qui a le plus chaud et qui a le plus froid, avec alertes canicule et gel.
 - **Bulletin annuel** : qui détient le record familial de jours de canicule, de gel ou de pollution sur les 365 derniers jours, avec alertes.
-- **Historique pollution** des 7 derniers jours par personne, avec la population du bassin.
+- **Bulletin pollution** des 7 derniers jours par personne, avec la population du bassin.
 
 ## Extrêmes du moment
 
