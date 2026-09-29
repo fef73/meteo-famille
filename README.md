@@ -36,6 +36,7 @@ Site : https://fef73.github.io/meteo-famille/ — accessible aussi depuis le lan
 
 ## Bulletins
 
+- **Résumé par ville**, en tête du bulletin : temps dominant de la journée (ensoleillé, éclaircies, nuageux, brouillard) ou phénomène notable (pluie, neige, orages, avec leur durée en heures, ou en jours sur 3 et 7 jours), températures min → max, et rafales quand elles dépassent 40 km/h.
 - **Bulletin de la période** : qui a le plus chaud et qui a le plus froid, avec alertes canicule et gel.
 - **Bulletin annuel** : qui détient le record familial de jours de canicule, de gel ou de pollution sur les 365 derniers jours, avec alertes.
 - **Historique pollution** des 7 derniers jours par personne, avec la population du bassin.
@@ -88,6 +89,10 @@ Bandeaux calculés en direct, chacun parmi une sélection de lieux (ce n'est pas
 - `sw.js` : service worker (page, Chart.js, polices et dernières réponses Open-Meteo gardés sur l'appareil pour l'usage hors connexion).
 - Les statistiques sur 365 jours sont calculées une fois au chargement, puis gardées en mémoire.
 - Statistiques de visite anonymes et sans cookie avec GoatCounter.
+
+## Contact
+
+Un bug, une idée, une question ? Le lien **✉️ Contact / suggestion** en bas de chaque page ouvre un court formulaire, sans compte à créer : https://forms.gle/EMZtxMBJCUE6HJXp8
 
 ## Licence
 
