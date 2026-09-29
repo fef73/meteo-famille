@@ -577,7 +577,7 @@ const TRANSLATIONS = {
     citySky_sun: "ensoleillé", citySky_partly: "éclaircies", citySky_cloudy: "nuageux", citySky_fog: "brouillard",
     cityRain: "pluie ({h} h)", citySnow: "neige ({h} h)", cityRainDays: "pluie ({h} j)", citySnowDays: "neige ({h} j)", cityStorm: "orages", cityWind: "rafales jusqu'à {v} km/h",
     yearlyBulletinTitle: "📋 bulletin météo annuel",
-    aqiHistoryTitle: "🌫️ historique pollution — 7 derniers jours (AQI ≥{a})",
+    aqiHistoryTitle: "😷 bulletin pollution — 7 derniers jours (AQI ≥{a})",
     periodToday: "aujourd'hui", periodTomorrow: "demain", periodAfterTomorrow: "après-demain",
     periodThreeDays: "sur les 3 prochains jours", periodSevenDays: "sur les 7 prochains jours",
     periodLead: "{city} tient la tête {period} avec {max}{u}",
@@ -694,7 +694,7 @@ const TRANSLATIONS = {
     citySky_sun: "sunny", citySky_partly: "sunny spells", citySky_cloudy: "cloudy", citySky_fog: "fog",
     cityRain: "rain ({h} h)", citySnow: "snow ({h} h)", cityRainDays: "rain ({h} d)", citySnowDays: "snow ({h} d)", cityStorm: "thunderstorms", cityWind: "winds up to {v} km/h",
     yearlyBulletinTitle: "📋 yearly weather bulletin",
-    aqiHistoryTitle: "🌫️ pollution history — last 7 days (AQI ≥{a})",
+    aqiHistoryTitle: "😷 pollution bulletin — last 7 days (AQI ≥{a})",
     periodToday: "today", periodTomorrow: "tomorrow", periodAfterTomorrow: "the day after tomorrow",
     periodThreeDays: "over the next 3 days", periodSevenDays: "over the next 7 days",
     periodLead: "{city} is in the lead {period} with {max}{u}",
@@ -1876,7 +1876,7 @@ function renderRecentAqiHistory(results){
     }).join("");
 
     container.innerHTML = `
-      <div class="bulletin-aqi-header">${t('aqiHistoryTitle', { a: AQI_SEUIL_ANNUEL })}</div>
+      <div class="bulletin-header">${t('aqiHistoryTitle', { a: AQI_SEUIL_ANNUEL })}</div>
       ${rowsHtml}
     `;
   });
@@ -2375,7 +2375,7 @@ const FEATURES_CONTENT = {
           <li>En tête du bulletin, un résumé par ville : temps dominant (ou pluie, neige, orages), températures min → max, rafales si elles dépassent 40 km/h</li>
           <li>Bulletin de la période : qui a le plus chaud / le plus froid en ce moment, avec alertes canicule/gel</li>
           <li>Bulletin annuel : qui bat le record de jours de canicule, gel ou pollution sur les 365 derniers jours parmi la famille, avec alertes</li>
-          <li>Historique pollution des 7 derniers jours par personne, avec la population du bassin</li>
+          <li>Bulletin pollution des 7 derniers jours par personne, avec la population du bassin</li>
         </ul>
         <h3>📍 Mode GPS (« Moi »)</h3>
         <ul>
@@ -2423,7 +2423,7 @@ const FEATURES_CONTENT = {
           <li>At the top of the bulletin, a summary per city: main weather (or rain, snow, storms), min → max temperatures, gusts when above 40 km/h</li>
           <li>Period bulletin: who's hottest / coolest right now, with heatwave/frost alerts</li>
           <li>Yearly bulletin: who holds the family record for heatwave, frost or pollution days over the last 365 days, with alerts</li>
-          <li>7-day pollution history per person, with area population</li>
+          <li>7-day pollution bulletin per person, with area population</li>
         </ul>
         <h3>📍 GPS mode (“Me”)</h3>
         <ul>
