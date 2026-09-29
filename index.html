@@ -267,6 +267,7 @@
     margin-top:16px; padding-top:14px; border-top:1px solid var(--hairline);
   }
   .bulletin-aqi-history:empty{display:none;}
+  #bulletin-pollution:has(.bulletin-aqi-history:empty){display:none;}
   .bulletin-aqi-header{
     font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase;
     color:var(--text-lo); margin-bottom:10px;
@@ -397,6 +398,9 @@
     </div>
   </header>
 
+  <!-- Bulletin de la période, au-dessus des courbes -->
+  <div class="bulletin" id="bulletin-period" style="margin:0 0 22px;"></div>
+
   <div class="panel">
     <div class="chart-holder">
       <div id="chart-status">Récupération des données Open-Meteo…</div>
@@ -412,7 +416,10 @@
 
   <div class="cards" id="cards"></div>
 
-  <div class="bulletin" id="bulletin-period"></div>
+  <!-- Bulletin pollution (7 derniers jours), rempli par renderRecentAqiHistory -->
+  <div class="bulletin" id="bulletin-pollution">
+    <div class="bulletin-aqi-history" id="bulletin-aqi-history" style="margin-top:0; padding-top:0; border-top:none;"></div>
+  </div>
 
   <div class="bulletin" id="bulletin"></div>
 
@@ -1260,9 +1267,9 @@ function buildPeriodBulletin(results){
     ${citiesHtml}
     <div class="bulletin-summary">${summaryText}</div>
     ${alertsHtml}
-    <div class="bulletin-aqi-history" id="bulletin-aqi-history"></div>
   `;
 
+  // Le bulletin pollution reste sous les cartes, dans son propre encadré
   renderRecentAqiHistory(results);
 }
 
