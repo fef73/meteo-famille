@@ -74,6 +74,7 @@ Renseigné dans le lanceur (pseudo, date, heure et ville de naissance), transmis
 - **Anniversaire** : compte à rebours, âge atteint, **prévision du jour J** dès 15 jours avant (à ta position, sinon à ta ville natale), **confettis** le jour même.
 - **Jours de vie** et prochain millier (« 24 000 jours le … »), **saint** de ton anniversaire.
 - **🔭 Carte du ciel de ta naissance**, au-dessus de la ville natale, à l'heure de naissance (22 h si elle n'est pas renseignée) : environ 700 étoiles, tracés et noms des constellations, étoiles les plus brillantes, planètes visibles à l'œil nu et Lune, avec une phrase de résumé (jour, crépuscule ou nuit, planètes au-dessus de l'horizon). Tout est calculé sur le téléphone, sans service en ligne : la carte fonctionne hors connexion. Précision : planètes à 0,1° près, Lune à environ 1°.
+- **✨ Thème astral** : Soleil, **ascendant** et milieu du ciel (avec l'heure de naissance), Lune et planètes dans leur signe, au degré près, puis un court portrait pour le signe solaire, l'ascendant et le signe lunaire. Présenté comme la tradition astrologique, pour le plaisir : l'astrologie n'a pas de fondement scientifique, les positions calculées, elles, sont réelles.
 - **Le jour de ta naissance** : météo à la ville natale (archives Open-Meteo / ERA5, depuis 1940) — temps, min → max, température à l'heure de naissance, pluie, neige, rafales —, lever et coucher du soleil, durée du jour, phase de lune, **constellation où se trouvait le Soleil** (limites IAU, y compris le Serpentaire) et signe astrologique.
 
 ## 📴 Hors connexion
