@@ -287,6 +287,9 @@
   .astro-grid{ display:grid; grid-template-columns:max-content 1fr; gap:3px 14px; font-size:13.5px; margin:6px 0 8px; }
   .astro-k{ color:var(--text-lo); }
   .astro-deg{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-lo); }
+  .horo-stars{ letter-spacing:1px; color:#ffd166; font-size:12.5px; white-space:nowrap; }
+  .horo-stars i{ font-style:normal; color:var(--text-lo); opacity:.45; }
+  .horo-grid{ grid-template-columns:max-content 1fr; align-items:baseline; }
   .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
   .confetti span{ position:absolute; top:-40px; animation:confetti-fall 4s ease-in forwards; }
   @keyframes confetti-fall{ to{ transform:translateY(110vh) rotate(540deg); opacity:.8; } }
@@ -2633,6 +2636,7 @@ const FEATURES_CONTENT = {
           <li>Le jour de ta naissance : météo à ta ville natale (archives depuis 1940), lever et coucher du soleil, phase de lune, constellation du Soleil et signe astrologique</li>
           <li>🔭 Carte du ciel au-dessus de ta ville natale à l'heure de ta naissance : étoiles, constellations, planètes et Lune, calculée sur le téléphone (fonctionne hors connexion)</li>
           <li>✨ Thème astral : Soleil, ascendant, milieu du ciel, Lune et planètes dans leur signe, avec un court portrait (tradition astrologique, pour le plaisir)</li>
+          <li>🔮 Horoscope du jour : pour ton signe, avec la Lune du jour (position réelle), cœur, projets, énergie, chiffre et conseil — renouvelé chaque jour, pour le plaisir</li>
         </ul>
         <h3>📴 Hors connexion</h3>
         <ul>
@@ -2693,6 +2697,7 @@ const FEATURES_CONTENT = {
           <li>The day you were born: weather in your birthplace (archives since 1940), sunrise and sunset, moon phase, the Sun's constellation and star sign</li>
           <li>🔭 Sky map above your birthplace at the time of your birth: stars, constellations, planets and Moon, computed on the phone (works offline)</li>
           <li>✨ Birth chart: Sun, ascendant, midheaven, Moon and planets in their signs, with a short portrait (astrological tradition, just for fun)</li>
+          <li>🔮 Daily horoscope: for your sign, with today's Moon (real position), heart, projects, energy, lucky number and a tip — renewed every day, just for fun</li>
         </ul>
         <h3>📴 Offline</h3>
         <ul>
@@ -2925,7 +2930,7 @@ function sunSky(naissance, heure){
   const cst = B.find(b => l2000 < b[0])[1];
   const FR = { Pisces:"Poissons", Aries:"Bélier", Taurus:"Taureau", Gemini:"Gémeaux", Cancer:"Cancer", Leo:"Lion", Virgo:"Vierge",
                Libra:"Balance", Scorpius:"Scorpion", Ophiuchus:"Serpentaire (Ophiuchus)", Sagittarius:"Sagittaire", Capricornus:"Capricorne", Aquarius:"Verseau" };
-  return { sign: signs[s] + " " + glyphs[s], constellation: en ? cst : FR[cst] };
+  return { sign: signs[s] + " " + glyphs[s], constellation: en ? cst : FR[cst], idx: s };
 }
 function skyOfCode(c){
   const en = lang === "en";
@@ -3201,6 +3206,166 @@ function astroThemeHtml(P, offset){
     <div class="profile-line profile-hint">${en ? "According to astrological tradition, just for fun: astrology has no scientific basis — the positions above, however, are real." : "Selon la tradition astrologique, pour le plaisir : l'astrologie n'a pas de fondement scientifique — les positions ci-dessus, elles, sont bien réelles."}</div>`;
 }
 
+// ---------- Horoscope du jour (pour le plaisir) ----------
+// Texte composé sur l'appareil, identique toute la journée pour un même signe ; la Lune du jour, elle, est calculée pour de vrai.
+const HORO = {
+  fr: {
+    sign: ["Ton énergie est contagieuse aujourd'hui : lance le truc que tu repousses.",
+           "Journée douce et solide : privilégie ce qui te fait du bien, pas ce qui presse.",
+           "Ta tête fourmille d'idées : une conversation peut tout débloquer.",
+           "Ton instinct est un bon radar : écoute-le, surtout pour les gens qui comptent.",
+           "Tu brilles sans forcer : laisse-toi regarder, tu l'as mérité.",
+           "Un détail réglé en cinq minutes te soulage toute la journée.",
+           "L'équilibre est de ton côté : tranche, même doucement, et avance.",
+           "Ton intensité fait mouche : choisis bien ta cible, et reste zen.",
+           "L'horizon t'appelle : même une petite escapade te remet d'aplomb.",
+           "Le travail de fond paie : un pas de plus, puis une vraie pause.",
+           "Ton idée un peu décalée est la bonne : note-la avant qu'elle file.",
+           "Ton imagination est en forme : laisse-la vagabonder, elle a des choses à dire."],
+    moon: ["on avance, on ose, on rattrape les détails plus tard.",
+           "confort, bons petits plats, rythme tranquille.",
+           "messages, idées, curiosité dans tous les sens.",
+           "cocon, souvenirs, câlins bienvenus.",
+           "on se montre, on fête, on rayonne.",
+           "tri, rangement, petites victoires utiles.",
+           "douceur, jolies rencontres, goût du beau.",
+           "profondeur, vérités, émotions franches.",
+           "envie de large, d'humour et de grands projets.",
+           "sérieux tranquille : on construit.",
+           "originalité, amis, idées neuves.",
+           "rêverie, intuition, musique dans les oreilles."],
+    love: ["Un petit message inattendu peut faire sourire toute ta soirée.",
+           "Dis merci à quelqu'un, simplement : ça vaut tous les grands discours.",
+           "Une vieille complicité refait surface, profites-en.",
+           "Pas besoin de tout expliquer : un regard suffit.",
+           "Un bon fou rire est au programme, si tu baisses un peu la garde.",
+           "Prends des nouvelles de quelqu'un que tu as perdu de vue.",
+           "La douceur gagne aujourd'hui : évite les petites piques.",
+           "Ton sourire fait plus d'effet que tu ne le crois."],
+    work: ["Une tâche qui traînait se règle plus vite que prévu.",
+           "Un coup de main arrive de là où tu ne l'attends pas.",
+           "Coche une seule chose sur ta liste : le reste suivra.",
+           "Une idée lancée à voix haute trouve preneur.",
+           "Bonne journée pour finir plutôt que commencer.",
+           "Ne réponds pas à chaud : la version de demain sera meilleure.",
+           "Un détail que tu avais repéré va s'avérer précieux.",
+           "Ta patience est ton atout discret du moment."],
+    energy: ["Dix minutes dehors valent une sieste : la lumière fait le travail.",
+             "Un grand verre d'eau avant toute décision importante.",
+             "Ton corps réclame un peu de mouvement, même quelques pas.",
+             "Couche-toi un peu plus tôt : demain te dira merci.",
+             "Un repas simple et bon te remet d'aplomb.",
+             "Respire profondément trois fois, puis reprends.",
+             "Le calme est ton carburant du jour : protège-le.",
+             "Éteins un écran, allume une musique."],
+    tip: ["Fais le premier pas, le reste suivra.",
+          "Ne te compare à personne aujourd'hui, sauf à toi d'hier.",
+          "Ce qui ne presse pas peut attendre demain.",
+          "Dis oui à une petite envie.",
+          "Garde ta meilleure blague pour le bon moment.",
+          "Un problème découpé en trois devient très raisonnable.",
+          "Va regarder le ciel une minute : il fait partie du programme.",
+          "Garde un peu de marge : l'imprévu sera sympa.",
+          "Choisis la gentillesse : c'est le meilleur rapport effort/effet.",
+          "Fais confiance à ta première intuition, elle a de l'allure."],
+    colors: ["bleu nuit","vert sauge","orange brûlé","jaune soleil","rose poudré","rouge coquelicot","violet prune","blanc lune"],
+  },
+  en: {
+    sign: ["Your energy is contagious today: start the thing you keep putting off.",
+           "A soft, steady day: favour what feels good over what feels urgent.",
+           "Your head is buzzing with ideas: one conversation could unlock everything.",
+           "Your instincts are a good radar: listen to them, especially about the people who matter.",
+           "You shine without trying: let yourself be seen, you've earned it.",
+           "One detail sorted in five minutes will lighten the whole day.",
+           "Balance is on your side: decide, even gently, and move on.",
+           "Your intensity hits the mark: pick your target well, and stay calm.",
+           "The horizon is calling: even a small escape will set you right.",
+           "Groundwork pays off: one more step, then a proper break.",
+           "Your slightly offbeat idea is the right one: jot it down before it slips away.",
+           "Your imagination is in great shape: let it wander, it has things to say."],
+    moon: ["we move, we dare, we catch up on details later.",
+           "comfort, good food, an easy pace.",
+           "messages, ideas, curiosity everywhere.",
+           "cocoon mode, memories, hugs welcome.",
+           "we show up, we celebrate, we glow.",
+           "sorting, tidying, small useful wins.",
+           "softness, nice encounters, a taste for beauty.",
+           "depth, honest truths, frank emotions.",
+           "a craving for space, humour and big plans.",
+           "quiet seriousness: we build.",
+           "originality, friends, fresh ideas.",
+           "daydreams, intuition, music in your ears."],
+    love: ["An unexpected little message could make your whole evening.",
+           "Simply say thank you to someone: it beats any grand speech.",
+           "An old complicity resurfaces, enjoy it.",
+           "No need to explain everything: a look will do.",
+           "A good laugh is on the cards, if you lower your guard a little.",
+           "Check in on someone you lost touch with.",
+           "Gentleness wins today: skip the little digs.",
+           "Your smile works better than you think."],
+    work: ["A task that kept dragging gets sorted faster than expected.",
+           "A helping hand comes from where you least expect it.",
+           "Tick off just one thing on your list: the rest will follow.",
+           "An idea said out loud finds a taker.",
+           "A good day to finish things rather than start them.",
+           "Don't reply in the heat of the moment: tomorrow's version will be better.",
+           "A detail you had spotted turns out to be precious.",
+           "Patience is your quiet asset right now."],
+    energy: ["Ten minutes outside beat a nap: the light does the work.",
+             "A big glass of water before any important decision.",
+             "Your body wants a bit of movement, even just a few steps.",
+             "Go to bed a little earlier: tomorrow will thank you.",
+             "A simple, good meal puts you back on your feet.",
+             "Breathe deeply three times, then carry on.",
+             "Calm is today's fuel: protect it.",
+             "Switch off a screen, switch on some music."],
+    tip: ["Make the first move, the rest will follow.",
+          "Compare yourself to no one today, except yesterday's you.",
+          "What isn't urgent can wait until tomorrow.",
+          "Say yes to a small craving.",
+          "Save your best joke for the right moment.",
+          "A problem cut into three becomes very reasonable.",
+          "Go and look at the sky for a minute: it's part of the programme.",
+          "Leave yourself some slack: the unexpected will be nice.",
+          "Choose kindness: it has the best effort-to-effect ratio.",
+          "Trust your first instinct, it has style."],
+    colors: ["midnight blue","sage green","burnt orange","sunshine yellow","powder pink","poppy red","plum purple","moon white"],
+  },
+};
+function horoRng(str){
+  let h = 2166136261;
+  for(let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  let a = h >>> 0;
+  return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+function horoscopeHtml(P){
+  if(!P || !P.naissance) return "";
+  const en = lang === "en", H = HORO[en ? "en" : "fr"];
+  const todayD = new Date(), today = localYMD(todayD);
+  const idx = sunSky(P.naissance, P.heure).idx;
+  // signe de la Lune aujourd'hui (longitude tropicale, mêmes formules que le thème astral)
+  const utc = todayD.getTime(), { bodies } = skyBodies(utc);
+  const T = (utc / 864e5 + 2440587.5 - 2451545.0) / 36525, eps = (23.43929 - 0.0130042 * T) * DEG;
+  const ra = bodies.moon.ra * DEG, de = bodies.moon.dec * DEG;
+  const moonL = norm360(Math.atan2(Math.sin(ra) * Math.cos(eps) + Math.tan(de) * Math.sin(eps), Math.cos(ra)) / DEG + 1.3969713 * T);
+  const mi = Math.floor(moonL / 30), moon = ephMoon(today);
+  const names = en ? ZODIAC.en : ZODIAC.fr;
+  const rng = horoRng(today + "|" + idx), pick = (pool) => pool[Math.floor(rng() * pool.length)];
+  const stars = () => { const n = 2 + Math.floor(rng() * 4); return `<span class="horo-stars" aria-label="${n}/5">${"★".repeat(n)}<i>${"★".repeat(5 - n)}</i></span>`; };
+  const row = (k, pool) => { const s = stars(); return `<span class="astro-k">${k}</span><span>${s} ${pick(pool)}</span>`; };
+  const grid = row(en ? "❤️ Heart" : "❤️ Cœur", H.love) + row(en ? "💼 Projects" : "💼 Projets", H.work) + row(en ? "⚡ Energy" : "⚡ Énergie", H.energy);
+  const lucky = 1 + Math.floor(rng() * 99), color = pick(H.colors), tip = pick(H.tip);
+  const c = en ? ":" : " :";
+  return `
+    <div class="profile-sub astro-title">🔮 ${en ? "Your horoscope today" : "Ton horoscope du jour"} · ${fmtLongDate(today)}</div>
+    <div class="profile-line">${ZODIAC.glyph[idx]} <b>${names[idx]}</b> — ${H.sign[idx]}</div>
+    <div class="profile-line">${moon.icon} ${en ? "Moon in" : "Lune en"} <b>${names[mi]}</b> · ${moon.illum} %${c} ${H.moon[mi]}</div>
+    <div class="astro-grid horo-grid">${grid}</div>
+    <div class="profile-line">🍀 ${en ? "Lucky number" : "Chiffre porte-bonheur"} <b>${lucky}</b> · ${en ? "colour" : "couleur"} <b>${color}</b></div>
+    <div class="profile-line">💡 <b>${en ? "Tip of the day" : "Conseil du jour"}</b>${c} ${tip}</div>
+    <div class="profile-line profile-hint">${en ? "Just for fun: written on your device, it changes every day. The Moon's position is real, the rest is a wink — astrology has no scientific basis." : "Pour le plaisir : composé sur ton téléphone, il change chaque jour. La position de la Lune est réelle, le reste est un clin d'œil — l'astrologie n'a pas de fondement scientifique."}</div>`;
+}
+
 async function renderProfile(){
   const el = document.getElementById("profile-block");
   if(!el || !PROFILE) return;
@@ -3235,6 +3400,7 @@ async function renderProfile(){
   birth.push(`<div class="profile-line">✨ ${en ? "The Sun was in the constellation" : "Le Soleil était dans la constellation"} <b>${sky.constellation}</b> · ${en ? "star sign" : "signe astrologique"} ${sky.sign}</div>`);
   birth.push(`<div id="profile-sky">${skyChartHtml(P, null)}</div>`);
   birth.push(`<div id="profile-astro">${astroThemeHtml(P, null)}</div>`);
+  birth.push(`<div id="profile-horo">${horoscopeHtml(P)}</div>`);
 
   el.innerHTML = `
     <div class="bulletin-header">🎂 ${who}</div>
