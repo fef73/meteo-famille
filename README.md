@@ -73,6 +73,7 @@ Renseigné dans le lanceur (pseudo, date, heure et ville de naissance), transmis
 - La carte « Moi » porte le **pseudo** (🎂 devant le jour de l'anniversaire).
 - **Anniversaire** : compte à rebours, âge atteint, **prévision du jour J** dès 15 jours avant (à ta position, sinon à ta ville natale), **confettis** le jour même.
 - **Jours de vie** et prochain millier (« 24 000 jours le … »), **saint** de ton anniversaire.
+- **🔭 Carte du ciel de ta naissance**, au-dessus de la ville natale, à l'heure de naissance (22 h si elle n'est pas renseignée) : environ 700 étoiles, tracés et noms des constellations, étoiles les plus brillantes, planètes visibles à l'œil nu et Lune, avec une phrase de résumé (jour, crépuscule ou nuit, planètes au-dessus de l'horizon). Tout est calculé sur le téléphone, sans service en ligne : la carte fonctionne hors connexion. Précision : planètes à 0,1° près, Lune à environ 1°.
 - **Le jour de ta naissance** : météo à la ville natale (archives Open-Meteo / ERA5, depuis 1940) — temps, min → max, température à l'heure de naissance, pluie, neige, rafales —, lever et coucher du soleil, durée du jour, phase de lune, **constellation où se trouvait le Soleil** (limites IAU, y compris le Serpentaire) et signe astrologique.
 
 ## 📴 Hors connexion
@@ -109,4 +110,4 @@ Un bug, une idée, une question ? Le lien **✉️ Contact / suggestion** en bas
 
 ## Licence
 
-© 2026 Fernand (fef73) — tous droits réservés. Voir le fichier [LICENSE](LICENSE). Les données météo restent soumises aux licences de leurs fournisseurs (Open-Meteo CC BY 4.0, INSEE / Etalab). Les avatars de la famille ne peuvent pas être réutilisés.
+© 2026 Fernand (fef73) — tous droits réservés. Voir le fichier [LICENSE](LICENSE). Étoiles et constellations : [d3-celestial](https://github.com/ofrohn/d3-celestial) (BSD-3-Clause, d'après Hipparcos). Les données météo restent soumises aux licences de leurs fournisseurs (Open-Meteo CC BY 4.0, INSEE / Etalab). Les avatars de la famille ne peuvent pas être réutilisés.
