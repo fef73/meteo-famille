@@ -276,6 +276,15 @@
   .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
   .confetti span{ position:absolute; top:-40px; animation:confetti-fall 4s ease-in forwards; }
   @keyframes confetti-fall{ to{ transform:translateY(110vh) rotate(540deg); opacity:.8; } }
+  /* Bulletins pollution et annuel repliables : on touche le titre */
+  #bulletin > .bulletin-header, #bulletin-pollution .bulletin-header{ cursor:pointer; user-select:none; }
+  #bulletin > .bulletin-header::after, #bulletin-pollution .bulletin-header::after{
+    content:"▴"; margin-left:auto; color:var(--text-lo); font-size:13px;
+  }
+  #bulletin.folded > .bulletin-header::after, #bulletin-pollution.folded .bulletin-header::after{ content:"▾"; }
+  #bulletin.folded > .bulletin-header, #bulletin-pollution.folded .bulletin-header{ margin-bottom:0; }
+  #bulletin.folded > :not(.bulletin-header),
+  #bulletin-pollution.folded .bulletin-aqi-history > :not(.bulletin-header){ display:none; }
   .card-toggle{
     display:block; width:100%; margin-top:10px; padding:6px 0; cursor:pointer;
     font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-lo);
@@ -1254,6 +1263,21 @@ function setupAvatarClickHandler(canvasEl){
     if(!hb && activeAvatarLabel !== null) activeAvatarLabel = null;
   });
 }
+
+// ---------- Bulletins pollution et annuel repliables (repliés par défaut, choix mémorisé) ----------
+const FOLD_KEY = "famille-bulletins-ouverts";
+const openBulletins = (() => { try { return new Set(JSON.parse(localStorage.getItem(FOLD_KEY) || "[]")); } catch(e){ return new Set(); } })();
+["bulletin", "bulletin-pollution"].forEach(id => {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle("folded", !openBulletins.has(id));
+  el.addEventListener("click", ev => {
+    if(!ev.target.closest(".bulletin-header")) return;
+    if(openBulletins.has(id)) openBulletins.delete(id); else openBulletins.add(id);
+    el.classList.toggle("folded", !openBulletins.has(id));
+    try { localStorage.setItem(FOLD_KEY, JSON.stringify([...openBulletins])); } catch(e){}
+  });
+});
 
 // ---------- Cartes repliables (état mémorisé sur l'appareil ; repliées par défaut) ----------
 const OPEN_CARDS_KEY = "famille-cartes-ouvertes";
@@ -2539,6 +2563,7 @@ const FEATURES_CONTENT = {
         <h3>🗂️ Cartes par personne</h3>
         <ul>
           <li>Cartes repliables : température et icône toujours visibles, détail sur « ▾ voir le détail » (choix mémorisé)</li>
+          <li>Bulletins pollution et annuel repliables : touche leur titre pour les ouvrir ou les fermer (choix mémorisé)</li>
           <li>Température actuelle (ou à midi pour demain/après-demain), icône météo, heure locale en direct</li>
           <li>Humidité, vent (vitesse + direction), heure du soleil au zénith, min/max de la période</li>
           <li><b>AQI moyen (7j)</b> cliquable, en rouge si &gt;60, avec détail par polluant (PM2.5, PM10, Ozone, NO₂, SO₂ — rouge si seuil santé OMS dépassé) et par pollen (bouleau, graminées, olivier, ambroisie, aulne, armoise — rouge si risque allergique)</li>
@@ -2596,6 +2621,7 @@ const FEATURES_CONTENT = {
         <h3>🗂️ Per-person cards</h3>
         <ul>
           <li>Collapsible cards: temperature and icon always shown, details under “▾ show details” (choice remembered)</li>
+          <li>Collapsible pollution and yearly bulletins: tap their title to open or close them (choice remembered)</li>
           <li>Current temperature (or noon for tomorrow/day after), weather icon, live local time</li>
           <li>Humidity, wind (speed + direction), solar noon, period min/max</li>
           <li>Clickable <b>Avg AQI (7d)</b>, red if &gt;60, with per-pollutant detail (PM2.5, PM10, Ozone, NO₂, SO₂ — red past the WHO health guideline) and per-pollen detail (birch, grass, olive, ragweed, alder, mugwort — red past the allergy-risk marker)</li>
