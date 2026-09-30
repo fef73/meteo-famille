@@ -23,6 +23,7 @@ Site : https://fef73.github.io/meteo-famille/ — accessible aussi depuis le lan
 
 ## Cartes par personne
 
+- **Repliables** : la température et l'icône restent visibles ; le reste s'ouvre avec « ▾ voir le détail ». Repliées par défaut, et le choix de chaque carte est mémorisé sur l'appareil.
 - Température actuelle (ou à midi pour demain et après-demain), icône météo, heure locale en direct.
 - Humidité, vent (vitesse + direction), heure du soleil au zénith, min/max de la période.
 - **AQI moyen (7 jours)** : cliquable, en rouge au-delà de 60. Le clic déplie :
@@ -38,7 +39,7 @@ Site : https://fef73.github.io/meteo-famille/ — accessible aussi depuis le lan
 ## Bulletins
 
 - **Saint du jour** (calendrier des saints en France) sur la ligne du bulletin de la période — ou celui de demain / après-demain selon la vue.
-- **Bulletin de la période**, placé au-dessus des courbes, avec en tête un **résumé par ville** : temps dominant de la journée (ensoleillé, éclaircies, nuageux, brouillard) ou phénomène notable (pluie, neige, orages, avec leur durée en heures, ou en jours sur 3 et 7 jours), températures min → max, et rafales quand elles dépassent 40 km/h.
+- **Bulletin de la période**, placé au-dessus des courbes (suivi du bloc « 🎂 profil » quand un profil est renseigné), avec en tête un **résumé par ville** : temps dominant de la journée (ensoleillé, éclaircies, nuageux, brouillard) ou phénomène notable (pluie, neige, orages, avec leur durée en heures, ou en jours sur 3 et 7 jours), températures min → max, et rafales quand elles dépassent 40 km/h.
 - Puis qui a le plus chaud et qui a le plus froid, avec alertes canicule et gel.
 - **Bulletin annuel** : qui détient le record familial de jours de canicule, de gel ou de pollution sur les 365 derniers jours, avec alertes.
 - **Bulletin pollution** (sous les cartes) des 7 derniers jours par personne, avec la population du bassin.
