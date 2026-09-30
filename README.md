@@ -38,6 +38,7 @@ Site : https://fef73.github.io/meteo-famille/ — accessible aussi depuis le lan
 
 ## Bulletins
 
+- Les bulletins **pollution** et **annuel** sont **repliables** : on touche leur titre pour les ouvrir ou les fermer. Repliés par défaut, choix mémorisé sur l'appareil.
 - **Saint du jour** (calendrier des saints en France) sur la ligne du bulletin de la période — ou celui de demain / après-demain selon la vue.
 - **Bulletin de la période**, placé au-dessus des courbes (suivi du bloc « 🎂 profil » quand un profil est renseigné), avec en tête un **résumé par ville** : temps dominant de la journée (ensoleillé, éclaircies, nuageux, brouillard) ou phénomène notable (pluie, neige, orages, avec leur durée en heures, ou en jours sur 3 et 7 jours), températures min → max, et rafales quand elles dépassent 40 km/h.
 - Puis qui a le plus chaud et qui a le plus froid, avec alertes canicule et gel.
