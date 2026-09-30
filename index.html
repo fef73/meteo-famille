@@ -125,7 +125,7 @@
 
   .cards{
     display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    gap:14px; margin-top:22px;
+    gap:14px; margin-top:22px; align-items:start;
   }
   .card{
     background:var(--bg-card); border:1px solid var(--hairline); border-radius:14px;
@@ -276,6 +276,15 @@
   .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
   .confetti span{ position:absolute; top:-40px; animation:confetti-fall 4s ease-in forwards; }
   @keyframes confetti-fall{ to{ transform:translateY(110vh) rotate(540deg); opacity:.8; } }
+  .card-toggle{
+    display:block; width:100%; margin-top:10px; padding:6px 0; cursor:pointer;
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-lo);
+    background:none; border:none; border-top:1px dashed var(--hairline); text-align:center;
+  }
+  .card-toggle:hover{ color:var(--text-hi); }
+  .card-toggle::after{ content:var(--toggle-less, "▴ masquer le détail"); }
+  .card.collapsed .card-toggle::after{ content:var(--toggle-more, "▾ voir le détail"); }
+  .card.collapsed .card-details{ display:none; }
   .bulletin-alerts{
     display:flex; flex-direction:column; gap:8px; margin-top:14px;
   }
@@ -1246,6 +1255,21 @@ function setupAvatarClickHandler(canvasEl){
   });
 }
 
+// ---------- Cartes repliables (état mémorisé sur l'appareil ; repliées par défaut) ----------
+const OPEN_CARDS_KEY = "famille-cartes-ouvertes";
+let openCards = (() => { try { return new Set(JSON.parse(localStorage.getItem(OPEN_CARDS_KEY) || "[]")); } catch(e){ return new Set(); } })();
+function cardIsOpen(key){ return openCards.has(key); }
+if(lang === "en"){
+  document.documentElement.style.setProperty("--toggle-more", '"▾ show details"');
+  document.documentElement.style.setProperty("--toggle-less", '"▴ hide details"');
+}
+function toggleCard(key){
+  if(openCards.has(key)) openCards.delete(key); else openCards.add(key);
+  try { localStorage.setItem(OPEN_CARDS_KEY, JSON.stringify([...openCards])); } catch(e){}
+  const el = document.querySelector(`.card[data-card="${key}"]`);
+  if(el) el.classList.toggle("collapsed", !openCards.has(key));
+}
+
 function buildLegend(){
   const row = document.getElementById("legend-row");
   const citiesHtml = CITIES.map(c => `
@@ -2064,7 +2088,7 @@ function buildCards(results){
     ).join("");
     const names = r.city.people.map(p => p.name).join(" & ");
     return `
-      <div class="card" style="--accent:${r.city.color}">
+      <div class="card${cardIsOpen(r.city.key) ? "" : " collapsed"}" data-card="${r.city.key}" style="--accent:${r.city.color}">
         <div class="card-top">
           <div class="avatars-mini">${avatarsHtml}</div>
           <div>
@@ -2076,6 +2100,8 @@ function buildCards(results){
           <span class="card-icon">${icon}</span>
           <div class="card-temp">${currentTemp.toFixed(1)}<span>${tempLabel}</span></div>
         </div>
+        <button type="button" class="card-toggle" onclick="toggleCard('${r.city.key}')"></button>
+        <div class="card-details">
         <div class="card-humidity">${t('humidity')} <b>${humidity != null ? humidity + "%" : "--"}</b></div>
         <div class="card-wind">${t('wind')} <b>${windSpeed != null ? windSpeed + " km/h" + (windDirection ? " " + windDirection : "") : "--"}</b></div>
         <div class="card-range">
@@ -2109,6 +2135,7 @@ function buildCards(results){
           <b id="yearly-aqi-${r.city.key}">…</b>
         </div>
         <div class="card-yearly-note">${t('yearlyNote')}</div>
+        </div>
       </div>
     `;
   }).join("");
@@ -2511,6 +2538,7 @@ const FEATURES_CONTENT = {
         </ul>
         <h3>🗂️ Cartes par personne</h3>
         <ul>
+          <li>Cartes repliables : température et icône toujours visibles, détail sur « ▾ voir le détail » (choix mémorisé)</li>
           <li>Température actuelle (ou à midi pour demain/après-demain), icône météo, heure locale en direct</li>
           <li>Humidité, vent (vitesse + direction), heure du soleil au zénith, min/max de la période</li>
           <li><b>AQI moyen (7j)</b> cliquable, en rouge si &gt;60, avec détail par polluant (PM2.5, PM10, Ozone, NO₂, SO₂ — rouge si seuil santé OMS dépassé) et par pollen (bouleau, graminées, olivier, ambroisie, aulne, armoise — rouge si risque allergique)</li>
@@ -2567,6 +2595,7 @@ const FEATURES_CONTENT = {
         </ul>
         <h3>🗂️ Per-person cards</h3>
         <ul>
+          <li>Collapsible cards: temperature and icon always shown, details under “▾ show details” (choice remembered)</li>
           <li>Current temperature (or noon for tomorrow/day after), weather icon, live local time</li>
           <li>Humidity, wind (speed + direction), solar noon, period min/max</li>
           <li>Clickable <b>Avg AQI (7d)</b>, red if &gt;60, with per-pollutant detail (PM2.5, PM10, Ozone, NO₂, SO₂ — red past the WHO health guideline) and per-pollen detail (birch, grass, olive, ragweed, alder, mugwort — red past the allergy-risk marker)</li>
