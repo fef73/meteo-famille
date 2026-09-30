@@ -283,6 +283,10 @@
   .sky-pname{ font:bold 8px 'Space Grotesk', sans-serif; }
   .sky-planet{ stroke:rgba(0,0,0,.4); stroke-width:.6; }
   .sky-card{ font:bold 10px 'IBM Plex Mono', monospace; fill:#8fa4b8; text-anchor:middle; }
+  .astro-title{ margin-top:14px; }
+  .astro-grid{ display:grid; grid-template-columns:max-content 1fr; gap:3px 14px; font-size:13.5px; margin:6px 0 8px; }
+  .astro-k{ color:var(--text-lo); }
+  .astro-deg{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-lo); }
   .confetti{ position:fixed; inset:0; pointer-events:none; z-index:9998; overflow:hidden; }
   .confetti span{ position:absolute; top:-40px; animation:confetti-fall 4s ease-in forwards; }
   @keyframes confetti-fall{ to{ transform:translateY(110vh) rotate(540deg); opacity:.8; } }
@@ -2628,6 +2632,7 @@ const FEATURES_CONTENT = {
           <li>Compte à rebours de l'anniversaire, prévision du jour J dès 15 jours avant, confettis le jour même, jours de vie, saint de ton anniversaire</li>
           <li>Le jour de ta naissance : météo à ta ville natale (archives depuis 1940), lever et coucher du soleil, phase de lune, constellation du Soleil et signe astrologique</li>
           <li>🔭 Carte du ciel au-dessus de ta ville natale à l'heure de ta naissance : étoiles, constellations, planètes et Lune, calculée sur le téléphone (fonctionne hors connexion)</li>
+          <li>✨ Thème astral : Soleil, ascendant, milieu du ciel, Lune et planètes dans leur signe, avec un court portrait (tradition astrologique, pour le plaisir)</li>
         </ul>
         <h3>📴 Hors connexion</h3>
         <ul>
@@ -2687,6 +2692,7 @@ const FEATURES_CONTENT = {
           <li>Birthday countdown, forecast for the day from 15 days before, confetti on the day, days of life, saint of your birthday</li>
           <li>The day you were born: weather in your birthplace (archives since 1940), sunrise and sunset, moon phase, the Sun's constellation and star sign</li>
           <li>🔭 Sky map above your birthplace at the time of your birth: stars, constellations, planets and Moon, computed on the phone (works offline)</li>
+          <li>✨ Birth chart: Sun, ascendant, midheaven, Moon and planets in their signs, with a short portrait (astrological tradition, just for fun)</li>
         </ul>
         <h3>📴 Offline</h3>
         <ul>
@@ -3018,13 +3024,16 @@ function skyBodies(utcMs){
 }
 
 // P = profil { naissance, heure?, lieu:{lat,lon,nom} } ; offset = décalage UTC du lieu ce jour-là (s)
+function birthUTC(P, offset){
+  const hm = P.heure || "22:00";
+  const [y, m, dd] = P.naissance.split("-").map(Number), [hh, mi] = hm.split(":").map(Number);
+  return Date.UTC(y, m - 1, dd, hh, mi) - (offset != null ? offset : Math.round(P.lieu.lon / 15) * 3600) * 1000;
+}
 function skyChartHtml(P, offset){
   if(!P || !P.lieu) return "";
   const en = lang === "en";
   const hm = P.heure || "22:00";
-  const [y, m, dd] = P.naissance.split("-").map(Number), [hh, mi] = hm.split(":").map(Number);
-  const utc = Date.UTC(y, m - 1, dd, hh, mi) - (offset != null ? offset : Math.round(P.lieu.lon / 15) * 3600) * 1000;
-  const { bodies, gmst } = skyBodies(utc);
+  const { bodies, gmst } = skyBodies(birthUTC(P, offset));
   const lst = norm360(gmst + P.lieu.lon), lat = P.lieu.lat;
   const H = (ra, dec) => toHorizontal(ra, dec, lst, lat);
   const R = 132, cx = 150, cy = 150;
@@ -3032,6 +3041,7 @@ function skyChartHtml(P, offset){
   const sun = H(bodies.sun.ra, bodies.sun.dec);
   const day = sun.alt > 0, dusk = !day && sun.alt > -6;
   let svg = "";
+  const labels = [];   // étiquettes placées à la fin, sans chevauchement et à l'intérieur du cercle
   // tracés des constellations (segments entièrement au-dessus de l'horizon)
   SKY.L.forEach(seg => {
     let pts = [];
@@ -3049,33 +3059,53 @@ function skyChartHtml(P, offset){
     const [x, y2] = proj(h);
     svg += `<circle cx="${x.toFixed(1)}" cy="${y2.toFixed(1)}" r="${Math.max(0.55, 2.7 - 0.5 * mag).toFixed(2)}" class="sky-star"/>`;
   });
-  // noms des constellations principales et des étoiles les plus brillantes
-  SKY.C.forEach(([ra, dec, fr, enName, rank]) => {
-    if(rank > 1) return;
-    const h = H(ra, dec);
-    if(h.alt < 12) return;
-    const [x, y2] = proj(h);
-    svg += `<text x="${x.toFixed(1)}" y="${y2.toFixed(1)}" class="sky-con">${en ? enName : fr}</text>`;
-  });
-  SKY.N.forEach(([ra, dec, name]) => {
-    const h = H(ra, dec);
-    if(h.alt < 4) return;
-    const [x, y2] = proj(h);
-    const nm = name === "Polaris" ? (en ? "Polaris" : "Étoile polaire") : name;
-    svg += `<text x="${(x + 4).toFixed(1)}" y="${(y2 - 3).toFixed(1)}" class="sky-name">${nm}</text>`;
-  });
   // planètes, Lune et Soleil
   const PN = en ? { mercury:"Mercury", venus:"Venus", mars:"Mars", jupiter:"Jupiter", saturn:"Saturn", moon:"Moon", sun:"Sun" }
                 : { mercury:"Mercure", venus:"Vénus", mars:"Mars", jupiter:"Jupiter", saturn:"Saturne", moon:"Lune", sun:"Soleil" };
   const PC = { mercury:"#c9b79c", venus:"#fff3c4", mars:"#ff7b54", jupiter:"#f4d19b", saturn:"#e8d08a", moon:"#e8eef5", sun:"#fbbf24" };
   const up = [];
-  ["sun","moon","venus","jupiter","mars","saturn","mercury"].forEach(n => {
+  ["sun","moon","venus","jupiter","mars","saturn","mercury"].forEach((n, i) => {
     const h = H(bodies[n].ra, bodies[n].dec);
     if(h.alt <= 0) return;
     if(n !== "sun") up.push(PN[n]);
     const [x, y2] = proj(h), r = n === "sun" ? 7 : n === "moon" ? 6 : 3.6;
-    svg += `<circle cx="${x.toFixed(1)}" cy="${y2.toFixed(1)}" r="${r}" fill="${PC[n]}" class="sky-planet"/>`
-         + `<text x="${(x + r + 3).toFixed(1)}" y="${(y2 + 3.5).toFixed(1)}" class="sky-pname" fill="${PC[n]}">${PN[n]}</text>`;
+    svg += `<circle cx="${x.toFixed(1)}" cy="${y2.toFixed(1)}" r="${r}" fill="${PC[n]}" class="sky-planet"/>`;
+    labels.push({ x, y: y2, r, text: PN[n], cls: "sky-pname", fill: PC[n], size: 8, prio: i, must: true });
+  });
+  SKY.N.forEach(([ra, dec, name]) => {
+    const h = H(ra, dec);
+    if(h.alt < 4) return;
+    const [x, y2] = proj(h);
+    labels.push({ x, y: y2, r: 2, text: name === "Polaris" ? (en ? "Polaris" : "Étoile polaire") : name, cls: "sky-name", size: 6.5, prio: 20 });
+  });
+  SKY.C.forEach(([ra, dec, fr, enName, rank]) => {
+    if(rank > 1) return;
+    const h = H(ra, dec);
+    if(h.alt < 12) return;
+    const [x, y2] = proj(h);
+    labels.push({ x, y: y2, r: 0, text: en ? enName : fr, cls: "sky-con", size: 7, prio: 40, center: true });
+  });
+  // placement : on essaie à droite, à gauche, au-dessus puis au-dessous ; on garde la première place libre
+  const placed = [];
+  const inside = (b) => [[b.x1, b.y1], [b.x2, b.y1], [b.x1, b.y2], [b.x2, b.y2]].every(([px, py]) => Math.hypot(px - cx, py - cy) < R - 1);
+  const free = (b) => placed.every(o => b.x2 < o.x1 || b.x1 > o.x2 || b.y2 < o.y1 || b.y1 > o.y2);
+  labels.sort((a, b) => a.prio - b.prio).forEach(L => {
+    const w = L.text.length * L.size * 0.56, hgt = L.size, g = L.r + 2.5;
+    const cand = L.center
+      ? [[L.x - w / 2, L.y - hgt / 2], [L.x - w / 2, L.y + 4], [L.x - w / 2, L.y - hgt - 4]]
+      : [[L.x + g, L.y - hgt / 2], [L.x - g - w, L.y - hgt / 2], [L.x - w / 2, L.y - g - hgt], [L.x - w / 2, L.y + g],
+         [L.x + g, L.y - g - hgt], [L.x - g - w, L.y + g], [L.x + g, L.y + g], [L.x - g - w, L.y - g - hgt]];
+    let pick = null;
+    for(const [x1, y1] of cand){
+      const b = { x1, y1, x2: x1 + w, y2: y1 + hgt };
+      if(inside(b) && free(b)){ pick = b; break; }
+    }
+    if(!pick && L.must){   // planète : on la nomme quand même, à l'intérieur du cercle
+      for(const [x1, y1] of cand){ const b = { x1, y1, x2: x1 + w, y2: y1 + hgt }; if(inside(b)){ pick = b; break; } }
+    }
+    if(!pick) return;
+    placed.push(pick);
+    svg += `<text x="${pick.x1.toFixed(1)}" y="${(pick.y2 - 1).toFixed(1)}" class="${L.cls}"${L.fill ? ` fill="${L.fill}"` : ""}>${L.text}</text>`;
   });
   const card = en ? ["N","S","E","W"] : ["N","S","E","O"];
   const frame = `
@@ -3095,6 +3125,80 @@ function skyChartHtml(P, offset){
                          : (en ? "no planet above the horizon." : "aucune planète au-dessus de l'horizon."));
   return `<div class="sky-wrap"><svg class="sky-map" viewBox="0 -10 300 325" role="img" aria-label="${en ? "Sky map" : "Carte du ciel"}">${frame}${svg}</svg>
     <div class="profile-line">🔭 ${when} — ${note}</div></div>`;
+}
+
+// ---------- Thème astral (tradition astrologique, pour le plaisir) ----------
+// Longitudes écliptiques « tropicales » (équinoxe de la date) calculées à partir des mêmes positions.
+const ZODIAC = {
+  fr: ["Bélier","Taureau","Gémeaux","Cancer","Lion","Vierge","Balance","Scorpion","Sagittaire","Capricorne","Verseau","Poissons"],
+  en: ["Aries","Taurus","Gemini","Cancer","Leo","Virgo","Libra","Scorpio","Sagittarius","Capricorn","Aquarius","Pisces"],
+  glyph: ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"],
+  traitsFr: ["énergie, franchise, goût de l'initiative — et une pointe d'impatience",
+             "calme, fidélité, sens du concret et des bonnes choses — et un brin d'entêtement",
+             "curiosité, esprit vif, goût des échanges — et tendance à s'éparpiller",
+             "sensibilité, attachement aux siens, besoin de protéger — et une certaine susceptibilité",
+             "générosité, rayonnement, sens de la fête — et une bonne dose de fierté",
+             "précision, sens du service, esprit d'analyse — et du perfectionnisme",
+             "sens de l'harmonie, diplomatie, goût du beau — et parfois de l'indécision",
+             "intensité, passion, lucidité — et un jardin secret bien gardé",
+             "optimisme, soif de voyages et d'idées, franc-parler — et un grand besoin de liberté",
+             "ambition, persévérance, sens des responsabilités — et une certaine réserve",
+             "originalité, indépendance, idéaux — et un esprit d'équipe inattendu",
+             "imagination, empathie, intuition — et un goût pour la rêverie"],
+  traitsEn: ["energy, frankness, a taste for initiative — and a touch of impatience",
+             "calm, loyalty, a feel for the concrete and the good things — and a streak of stubbornness",
+             "curiosity, a quick mind, love of conversation — and a tendency to scatter",
+             "sensitivity, attachment to loved ones, a protective streak — and some touchiness",
+             "generosity, warmth, a sense of celebration — and plenty of pride",
+             "precision, helpfulness, an analytical mind — and perfectionism",
+             "a sense of harmony, diplomacy, love of beauty — and sometimes indecision",
+             "intensity, passion, clear-sightedness — and a well-kept secret garden",
+             "optimism, a thirst for travel and ideas, plain speaking — and a deep need for freedom",
+             "ambition, perseverance, a sense of duty — and a certain reserve",
+             "originality, independence, ideals — and an unexpected team spirit",
+             "imagination, empathy, intuition — and a taste for daydreaming"],
+};
+function astroThemeHtml(P, offset){
+  if(!P || !P.lieu) return "";
+  const en = lang === "en";
+  const utc = birthUTC(P, offset);
+  const { bodies, gmst } = skyBodies(utc);
+  const d = utc / 864e5 + 2440587.5 - 2451545.0, T = d / 36525;
+  const eps = (23.43929 - 0.0130042 * T) * DEG, prec = 1.3969713 * T;   // précession J2000 → date
+  const ecl = (ra, dec) => {
+    const a = ra * DEG, de = dec * DEG;
+    return norm360(Math.atan2(Math.sin(a) * Math.cos(eps) + Math.tan(de) * Math.sin(eps), Math.cos(a)) / DEG + prec);
+  };
+  const names = en ? ZODIAC.en : ZODIAC.fr;
+  const fmt = (l) => { const s = Math.floor(l / 30); return `${ZODIAC.glyph[s]} <b>${names[s]}</b> <span class="astro-deg">${Math.floor(l % 30)}°</span>`; };
+  const rows = [];
+  const sunL = ecl(bodies.sun.ra, bodies.sun.dec), moonL = ecl(bodies.moon.ra, bodies.moon.dec);
+  rows.push([en ? "☀️ Sun" : "☀️ Soleil", fmt(sunL)]);
+  let ascL = null;
+  if(P.heure){
+    const L = norm360(gmst + P.lieu.lon) * DEG, f = P.lieu.lat * DEG, e = eps;
+    ascL = norm360(Math.atan2(Math.cos(L), -(Math.sin(L) * Math.cos(e) + Math.tan(f) * Math.sin(e))) / DEG + prec);
+    const mcL = norm360(Math.atan2(Math.sin(L), Math.cos(L) * Math.cos(e)) / DEG + prec);
+    rows.push([en ? "⬆️ Ascendant" : "⬆️ Ascendant", fmt(ascL)]);
+    rows.push([en ? "🔝 Midheaven" : "🔝 Milieu du ciel", fmt(mcL)]);
+  }
+  rows.push([en ? "🌙 Moon" : "🌙 Lune", fmt(moonL)]);
+  const PN = en ? { mercury:"Mercury", venus:"Venus", mars:"Mars", jupiter:"Jupiter", saturn:"Saturn" }
+                : { mercury:"Mercure", venus:"Vénus", mars:"Mars", jupiter:"Jupiter", saturn:"Saturne" };
+  ["mercury","venus","mars","jupiter","saturn"].forEach(n => rows.push(["🪐 " + PN[n], fmt(ecl(bodies[n].ra, bodies[n].dec))]));
+  const traits = en ? ZODIAC.traitsEn : ZODIAC.traitsFr;
+  const s = (l) => Math.floor(l / 30);
+  const portrait = [
+    `<div class="profile-line">☀️ <b>${en ? "Your nature" : "Ta nature profonde"}</b> (${names[s(sunL)]})${en ? ":" : " :"} ${traits[s(sunL)]}.</div>`,
+    ascL != null ? `<div class="profile-line">⬆️ <b>${en ? "How others see you" : "Ce que les autres perçoivent d'abord"}</b> (${names[s(ascL)]})${en ? ":" : " :"} ${traits[s(ascL)]}.</div>` : "",
+    `<div class="profile-line">🌙 <b>${en ? "Your inner life" : "Ta vie intérieure"}</b> (${names[s(moonL)]})${en ? ":" : " :"} ${traits[s(moonL)]}.</div>`,
+  ].join("");
+  return `
+    <div class="profile-sub astro-title">✨ ${en ? "Your birth chart" : "Ton thème astral"}</div>
+    <div class="astro-grid">${rows.map(([k, v]) => `<span class="astro-k">${k}</span><span>${v}</span>`).join("")}</div>
+    ${portrait}
+    ${P.heure ? "" : `<div class="profile-line profile-hint">${en ? "Add your time of birth in the launcher to get your ascendant." : "Ajoute ton heure de naissance dans le lanceur pour connaître ton ascendant."}</div>`}
+    <div class="profile-line profile-hint">${en ? "According to astrological tradition, just for fun: astrology has no scientific basis — the positions above, however, are real." : "Selon la tradition astrologique, pour le plaisir : l'astrologie n'a pas de fondement scientifique — les positions ci-dessus, elles, sont bien réelles."}</div>`;
 }
 
 async function renderProfile(){
@@ -3130,6 +3234,7 @@ async function renderProfile(){
   birth.push(`<div class="profile-line">${moon.icon} ${moon.name} · ${moon.illum} %</div>`);
   birth.push(`<div class="profile-line">✨ ${en ? "The Sun was in the constellation" : "Le Soleil était dans la constellation"} <b>${sky.constellation}</b> · ${en ? "star sign" : "signe astrologique"} ${sky.sign}</div>`);
   birth.push(`<div id="profile-sky">${skyChartHtml(P, null)}</div>`);
+  birth.push(`<div id="profile-astro">${astroThemeHtml(P, null)}</div>`);
 
   el.innerHTML = `
     <div class="bulletin-header">🎂 ${who}</div>
@@ -3171,7 +3276,10 @@ async function renderProfile(){
       if(D.wind_gusts_10m_max[0] >= 50) w += ` · 💨 ${Math.round(D.wind_gusts_10m_max[0])} km/h`;
       wEl.innerHTML = w;
       // carte du ciel recalculée avec le décalage horaire exact du lieu ce jour-là
-      if(typeof d.utc_offset_seconds === "number") document.getElementById("profile-sky").innerHTML = skyChartHtml(P, d.utc_offset_seconds);
+      if(typeof d.utc_offset_seconds === "number"){
+        document.getElementById("profile-sky").innerHTML = skyChartHtml(P, d.utc_offset_seconds);
+        document.getElementById("profile-astro").innerHTML = astroThemeHtml(P, d.utc_offset_seconds);
+      }
       if(D.sunrise[0] && D.sunset[0]){
         sEl.innerHTML = `☀️ ${ephHM(ephMinutes(D.sunrise[0]))} · 🌅 ${ephHM(ephMinutes(D.sunset[0]))} · ⏱ ${ephT("daylight")} <b>${ephDuration(D.daylight_duration[0] / 60)}</b>`;
       }
