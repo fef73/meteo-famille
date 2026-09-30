@@ -277,7 +277,14 @@
   .confetti span{ position:absolute; top:-40px; animation:confetti-fall 4s ease-in forwards; }
   @keyframes confetti-fall{ to{ transform:translateY(110vh) rotate(540deg); opacity:.8; } }
   /* Bulletins pollution et annuel repliables : on touche le titre */
+  #bulletin-period > .bulletin-header, #profile-block > .bulletin-header,
   #bulletin > .bulletin-header, #bulletin-extremes > .bulletin-header, #bulletin-pollution .bulletin-header{ cursor:pointer; user-select:none; }
+  #bulletin-period > .bulletin-header::after, #profile-block > .bulletin-header::after{ content:"▴"; margin-left:auto; padding-left:10px; color:var(--text-lo); font-size:13px; }
+  #bulletin-period > .bulletin-header::after{ margin-left:10px; }  /* le saint est déjà poussé à droite */
+  #bulletin-period > .bulletin-header:not(:has(.bulletin-saint))::after{ margin-left:auto; }
+  #bulletin-period.folded > .bulletin-header::after, #profile-block.folded > .bulletin-header::after{ content:"▾"; }
+  #bulletin-period.folded > .bulletin-header, #profile-block.folded > .bulletin-header{ margin-bottom:0; }
+  #bulletin-period.folded > :not(.bulletin-header), #profile-block.folded > :not(.bulletin-header){ display:none; }
   #bulletin > .bulletin-header::after, #bulletin-extremes > .bulletin-header::after, #bulletin-pollution .bulletin-header::after{
     content:"▴"; margin-left:auto; color:var(--text-lo); font-size:13px;
   }
@@ -1282,6 +1289,21 @@ document.getElementById("extremes-title").textContent = lang === "en" ? "🌍 ex
     if(openBulletins.has(id)) openBulletins.delete(id); else openBulletins.add(id);
     el.classList.toggle("folded", !openBulletins.has(id));
     try { localStorage.setItem(FOLD_KEY, JSON.stringify([...openBulletins])); } catch(e){}
+  });
+});
+
+// Bulletin du jour et bloc anniversaire : ouverts par défaut, repliables en touchant le titre
+const FOLD_TOP_KEY = "famille-bulletins-fermes";
+const closedTop = (() => { try { return new Set(JSON.parse(localStorage.getItem(FOLD_TOP_KEY) || "[]")); } catch(e){ return new Set(); } })();
+["bulletin-period", "profile-block"].forEach(id => {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle("folded", closedTop.has(id));
+  el.addEventListener("click", ev => {
+    if(!ev.target.closest(".bulletin-header")) return;
+    if(closedTop.has(id)) closedTop.delete(id); else closedTop.add(id);
+    el.classList.toggle("folded", closedTop.has(id));
+    try { localStorage.setItem(FOLD_TOP_KEY, JSON.stringify([...closedTop])); } catch(e){}
   });
 });
 
@@ -2569,7 +2591,7 @@ const FEATURES_CONTENT = {
         <h3>🗂️ Cartes par personne</h3>
         <ul>
           <li>Cartes repliables : température et icône toujours visibles, détail sur « ▾ voir le détail » (choix mémorisé)</li>
-          <li>Bulletins pollution, annuel et des extrêmes repliables : touche leur titre pour les ouvrir ou les fermer (choix mémorisé)</li>
+          <li>Tous les bulletins sont repliables en touchant leur titre (choix mémorisé) : le bulletin du jour et l'anniversaire sont ouverts par défaut, les bulletins pollution, annuel et des extrêmes fermés</li>
           <li>Température actuelle (ou à midi pour demain/après-demain), icône météo, heure locale en direct</li>
           <li>Humidité, vent (vitesse + direction), heure du soleil au zénith, min/max de la période</li>
           <li><b>AQI moyen (7j)</b> cliquable, en rouge si &gt;60, avec détail par polluant (PM2.5, PM10, Ozone, NO₂, SO₂ — rouge si seuil santé OMS dépassé) et par pollen (bouleau, graminées, olivier, ambroisie, aulne, armoise — rouge si risque allergique)</li>
@@ -2627,7 +2649,7 @@ const FEATURES_CONTENT = {
         <h3>🗂️ Per-person cards</h3>
         <ul>
           <li>Collapsible cards: temperature and icon always shown, details under “▾ show details” (choice remembered)</li>
-          <li>Collapsible pollution, yearly and extremes bulletins: tap their title to open or close them (choice remembered)</li>
+          <li>Every bulletin folds by tapping its title (choice remembered): today's bulletin and birthday open by default, pollution, yearly and extremes bulletins closed</li>
           <li>Current temperature (or noon for tomorrow/day after), weather icon, live local time</li>
           <li>Humidity, wind (speed + direction), solar noon, period min/max</li>
           <li>Clickable <b>Avg AQI (7d)</b>, red if &gt;60, with per-pollutant detail (PM2.5, PM10, Ozone, NO₂, SO₂ — red past the WHO health guideline) and per-pollen detail (birch, grass, olive, ragweed, alder, mugwort — red past the allergy-risk marker)</li>
