@@ -1,4 +1,3 @@
-
 Copyright (c) 2026 Fernand (fef73). Tous droits réservés — All rights reserved.
 
 FRANÇAIS
@@ -16,6 +15,9 @@ Les données météorologiques affichées proviennent de services tiers et
 restent soumises à leurs propres licences (Open-Meteo, données CC BY 4.0 ;
 geo.api.gouv.fr, données INSEE sous Licence Ouverte Etalab).
 
+La carte du ciel utilise les données d'étoiles et de constellations de
+d3-celestial (Olaf Frohn, licence BSD-3-Clause, d'après le catalogue Hipparcos).
+
 Contact : via GitHub, https://github.com/fef73
 
 ENGLISH
@@ -26,6 +28,9 @@ author's prior written permission. Viewing the website online remains free.
 
 The family members' avatars and photos embedded in the site are personal:
 they may not be copied, reused or distributed outside this site.
+
+The sky map uses star and constellation data from d3-celestial
+(Olaf Frohn, BSD-3-Clause licence, based on the Hipparcos catalogue).
 
 Weather data shown comes from third-party services and remains subject to
 their own licences (Open-Meteo, CC BY 4.0 data; geo.api.gouv.fr, INSEE data
